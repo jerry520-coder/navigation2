@@ -1,0 +1,784 @@
+<?xml version="1.0"?><!--是 XML（eXtensible Markup Language）文档的声明。它告诉解析器以下文本是一个XML文档，并指定了XML文档的版本号。-->
+<!--
+  Gazebo ROS ackermann drive plugin demo
+
+  Try sending commands:
+
+    ros2 topic pub /demo/cmd_demo geometry_msgs/msg/Twist '{linear: {x: 1.0}, angular: {z: 0.1}}' -1
+
+  Try listening to odometry:
+
+    ros2 topic echo /demo/odom_demo
+
+  Try listening to odometer reading(linear distance convered):
+
+    ros2 topic echo /demo/distance_demo
+
+  Try listening to TF:
+
+    ros2 run tf2_ros tf2_echo odom_demo chassis
+
+    and other links
+-->
+<sdf version="1.6">  <!--是用于描述三维模型和模拟物理世界的SDF（Simulation Description Format）文件的起始标签和结束标签。-->
+  <world name="default">
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <!-- 定义了一个名为 "prius_hybrid" 的机器人模型 -->
+    <model name="prius_hybrid">
+      <pose>0 0 0.03 0 0 0</pose>
+      <link name="chassis">
+        <pose>0 0 0 0 0 1.57</pose>
+        <inertial>
+          <mass>1326.0</mass>
+          <pose>0 -0.266 0.48 0 0 0</pose>
+          <inertia>
+            <ixx>2581.13354740</ixx>
+            <ixy>0.0</ixy>
+            <iyy>591.30846112</iyy>
+            <ixz>0.0</ixz>
+            <iyz>0.0</iyz>
+            <izz>2681.95008628</izz>
+          </inertia>
+        </inertial>
+
+        <!-- 定义了连接部分的可视化外观。包括了3D模型的URI、缩放和子网格等信息。 -->
+        <visual name="chassis_visual">
+          <geometry>
+            <mesh>
+              <uri>model://prius_hybrid/meshes/Hybrid.obj</uri>
+              <scale>0.01 0.01 0.01</scale>
+              <submesh>
+                <name>Hybrid</name>
+                <center>false</center>
+              </submesh>
+            </mesh>
+          </geometry>
+        </visual>
+
+        <visual name="interior_visual">
+          <geometry>
+            <mesh>
+              <uri>model://prius_hybrid/meshes/Hybrid.obj</uri>
+              <scale>0.01 0.01 0.01</scale>
+              <submesh>
+                <name>Hybrid_Interior</name>
+                <center>false</center>
+              </submesh>
+            </mesh>
+          </geometry>
+        </visual>
+
+        <visual name="windows_visual">
+          <geometry>
+            <mesh>
+              <uri>model://prius_hybrid/meshes/Hybrid.obj</uri>
+              <scale>0.01 0.01 0.01</scale>
+              <submesh>
+                <name>Hybrid_Windows</name>
+                <center>false</center>
+              </submesh>
+            </mesh>
+          </geometry>
+        </visual>
+
+        <!-- 定义了连接部分的碰撞属性，包括碰撞形状（例如盒子、圆柱、球体）和碰撞盒的尺寸。 -->
+        <collision name="chassis">
+          <pose>0.0 0.05 0.625 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>1.7526 2.1 0.95</size>
+            </box>
+          </geometry>
+        </collision>
+
+        <collision name="front_bumper">
+          <pose>0.0 -2.0 0.458488 0.0 0 0</pose>
+          <geometry>
+            <box>
+              <size>1.337282 0.48 0.566691</size>
+            </box>
+          </geometry>
+        </collision>
+
+        <collision name="hood">
+          <pose>0.0 -1.900842 0.676305 0.341247 0 0</pose>
+          <geometry>
+            <box>
+              <size>1.597968 0.493107 0.265468</size>
+            </box>
+          </geometry>
+        </collision>
+
+        <collision name="windshield">
+          <pose>0.0 -0.875105 1.032268 0.335476 0 0</pose>
+          <geometry>
+            <box>
+              <size>1.168381 1.654253 0.272347</size>
+            </box>
+          </geometry>
+        </collision>
+
+        <collision name="top_front">
+          <pose>0.0 0.161236 1.386042 0.135030 0 0</pose>
+          <geometry>
+            <box>
+              <size>1.279154 0.625988 0.171868</size>
+            </box>
+          </geometry>
+        </collision>
+
+        <collision name="top_rear">
+          <pose>0.0 0.817696 1.360069 -0.068997 0 0</pose>
+          <geometry>
+            <box>
+              <size>1.285130 0.771189 0.226557</size>
+            </box>
+          </geometry>
+        </collision>
+
+        <collision name="rear_window">
+          <pose>0.0 1.640531 1.175126 -0.262017 0 0</pose>
+          <geometry>
+            <box>
+              <size>1.267845 1.116344 0.244286</size>
+            </box>
+          </geometry>
+        </collision>
+
+        <collision name="trunk">
+          <pose>0.0 1.637059 0.888180 0.0 0 0</pose>
+          <geometry>
+            <box>
+              <size>1.788064 1.138988 0.482746</size>
+            </box>
+          </geometry>
+        </collision>
+
+        <collision name="back_bumper">
+          <pose>0.0 2.054454 0.577870 0.0 0 0</pose>
+          <geometry>
+            <box>
+              <size>1.781650 0.512093 0.581427</size>
+            </box>
+          </geometry>
+        </collision>
+      </link>
+
+
+      <!-- 方向盘 -->
+      <link name="steering_wheel">
+        <pose>0.627868 0.357734 0.988243 -1.302101 0 1.57</pose>
+        <inertial>
+          <mass>1.0</mass>
+          <inertia>
+            <ixx>0.14583300</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.14583300</iyy>
+            <iyz>0</iyz>
+            <izz>0.12500000</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry>
+            <cylinder>
+              <radius>0.178172</radius>
+              <length>0.041845</length>
+            </cylinder>
+          </geometry>
+          <surface>
+            <contact>
+              <ode>
+                <min_depth>0.003</min_depth>
+              </ode>
+            </contact>
+          </surface>
+        </collision>
+        <visual name="visual">
+          <pose>0 0 0 1.302101 0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://prius_hybrid/meshes/Hybrid.obj</uri>
+              <scale>0.01 0.01 0.01</scale>
+              <submesh>
+                <name>Steering_Wheel</name>
+                <center>true</center>
+              </submesh>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+
+      <!-- 左前轮 -->
+      <link name="front_left_wheel">
+        <!-- 这些旋转信息通常用于确定轮子的初始朝向。 -->
+        <pose>1.41 0.76 0.3 0 0 1.57</pose>
+        <inertial>
+          <mass>11</mass>
+          <inertia>
+            <ixx>0.58631238</ixx>
+            <ixy>0.0</ixy>
+            <iyy>0.33552910</iyy>
+            <ixz>0.0</ixz>
+            <iyz>0.0</iyz>
+            <izz>0.33552910</izz>
+          </inertia>
+        </inertial>
+
+        <visual name="visual">
+          <pose>0.04 0.0 0.0 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://prius_hybrid/meshes/Hybrid.obj</uri>
+              <scale>0.01 0.01 0.01</scale>
+              <submesh>
+                <name>Wheel_Front_Left_</name>
+                <center>true</center>
+              </submesh>
+            </mesh>
+          </geometry>
+        </visual>
+
+        <collision name="collision">
+          <pose>0.0 0.0 0.0 0 1.5707963267948966 0</pose>
+          <geometry>
+            <sphere>
+              <radius>0.31265</radius>
+            </sphere>
+          </geometry>
+          <surface>
+            <!-- 指定了摩擦系数的ODE（Open Dynamics Engine）参数，包括摩擦系数（mu）、第二层摩擦系数（mu2）、滑动摩擦（slip1）和滑动摩擦（slip2）。 -->
+            <friction>
+              <ode>
+                <mu>0.9</mu>
+                <mu2>0.9</mu2>
+                <slip1>0.0</slip1>
+                <slip2>0.0</slip2>
+              </ode>
+            </friction>
+            <!-- 描述了碰撞的接触性质，包括最小碰撞深度（min_depth）和弹簧系数（kp）。 -->
+            <contact>
+              <ode>
+                <min_depth>0.001</min_depth>
+                <kp>1e9</kp>
+              </ode>
+            </contact>
+          </surface>
+        </collision>
+      </link>
+
+      <!-- 右前轮 -->
+      <link name="front_right_wheel">
+        <pose>1.41 -0.76 0.3 0 0 1.57</pose>
+        <inertial>
+          <mass>11</mass>
+          <inertia>
+            <ixx>0.58631238</ixx>
+            <ixy>0.0</ixy>
+            <iyy>0.33552910</iyy>
+            <ixz>0.0</ixz>
+            <iyz>0.0</iyz>
+            <izz>0.33552910</izz>
+          </inertia>
+        </inertial>
+        <visual name="visual">
+          <pose>-0.04 0.0 0.0 0 0 0</pose>
+          <pose>0 0 0.0 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://prius_hybrid/meshes/Hybrid.obj</uri>
+              <scale>0.01 0.01 0.01</scale>
+              <submesh>
+                <name>Wheel_Front_Right</name>
+                <center>true</center>
+              </submesh>
+            </mesh>
+          </geometry>
+        </visual>
+
+        <collision name="collision">
+          <pose>0.0 0.0 0.0 0 1.5707963267948966 0</pose>
+          <geometry>
+            <sphere>
+              <radius>0.31265</radius>
+            </sphere>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>0.9</mu>
+                <mu2>0.9</mu2>
+                <slip1>0.0</slip1>
+                <slip2>0.0</slip2>
+              </ode>
+            </friction>
+            <contact>
+              <ode>
+                <min_depth>0.001</min_depth>
+                <kp>1e9</kp>
+              </ode>
+            </contact>
+          </surface>
+
+        </collision>
+      </link>
+
+      <!-- 左后轮 -->
+      <link name="rear_left_wheel">
+        <pose>-1.45 0.786 0.3 0 0 1.57</pose>
+        <inertial>
+          <mass>11</mass>
+          <inertia>
+            <ixx>0.58631238</ixx>
+            <ixy>0.0</ixy>
+            <iyy>0.33552910</iyy>
+            <ixz>0.0</ixz>
+            <iyz>0.0</iyz>
+            <izz>0.33552910</izz>
+          </inertia>
+        </inertial>
+
+        <visual name="visual">
+          <pose>0.04 0.0 0.0 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://prius_hybrid/meshes/Hybrid.obj</uri>
+              <scale>0.01 0.01 0.01</scale>
+              <submesh>
+                <name>Wheel_Front_Left_</name>
+                <center>true</center>
+              </submesh>
+            </mesh>
+          </geometry>
+        </visual>
+
+        <collision name="collision">
+          <pose>0.0 0.0 0.0 0 1.5707963267948966 0</pose>
+          <geometry>
+            <sphere>
+              <radius>0.31265</radius>
+            </sphere>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1.1</mu>
+                <mu2>1.1</mu2>
+                <slip1>0.0</slip1>
+                <slip2>0.0</slip2>
+              </ode>
+            </friction>
+            <contact>
+              <ode>
+                <min_depth>0.001</min_depth>
+                <kp>1e9</kp>
+              </ode>
+            </contact>
+          </surface>
+
+        </collision>
+      </link>
+
+      <!-- 右后轮 -->
+      <link name="rear_right_wheel">
+        <pose>-1.45 -0.786 0.3 0 0 1.57</pose>
+        <inertial>
+          <mass>11</mass>
+          <inertia>
+            <ixx>0.58631238</ixx>
+            <ixy>0.0</ixy>
+            <iyy>0.33552910</iyy>
+            <ixz>0.0</ixz>
+            <iyz>0.0</iyz>
+            <izz>0.33552910</izz>
+          </inertia>
+        </inertial>
+        <visual name="visual">
+          <pose>-0.04 0.0 0.0 0 0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://prius_hybrid/meshes/Hybrid.obj</uri>
+              <scale>0.01 0.01 0.01</scale>
+              <submesh>
+                <name>Wheel_Front_Right</name>
+                <center>true</center>
+              </submesh>
+            </mesh>
+          </geometry>
+        </visual>
+
+        <collision name="collision">
+          <pose>0.0 0.0 0.0 0 1.5707963267948966 0</pose>
+          <geometry>
+            <sphere>
+              <radius>0.31265</radius>
+            </sphere>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1.1</mu>
+                <mu2>1.1</mu2>
+                <slip1>0.0</slip1>
+                <slip2>0.0</slip2>
+              </ode>
+            </friction>
+            <contact>
+              <ode>
+                <min_depth>0.001</min_depth>
+                <kp>1e9</kp>
+              </ode>
+            </contact>
+          </surface>
+        </collision>
+      </link>
+
+      <!-- 连接机器人底盘（chassis）和左前轮（front_left_wheel） -->
+      <joint type="universal" name="front_left_combined_joint">        <!--Universal关节是一种允许两个刚体相对旋转的关节类型，通常用于模拟车轮的悬挂。-->
+        <pose>0 0 0 -0.08726646259971647 0 0</pose>
+        <child>front_left_wheel</child>
+        <parent>chassis</parent>
+        <!-- 定义了关节的主轴（axis）,绕Z轴旋转的,限制在正负 50 度之间 -->
+        <axis>
+          <xyz>0 0 1</xyz>
+          <limit>
+            <!-- +- 50 degrees -->
+            <lower>-0.8727</lower>
+            <upper>0.8727</upper>
+          </limit>
+        </axis>
+        <!-- 定义了关节的次轴（axis2），通常用于模拟车轮的悬挂。 -->
+        <axis2>
+          <xyz>1 0 0</xyz>
+          <dynamics>
+            <friction>18.0474092253</friction>
+          </dynamics>
+        </axis2>
+      </joint>
+
+      <!-- 右前轮关节joint -->
+      <joint type="universal" name="front_right_combined_joint">
+        <pose>0 0 0 -0.08726646259971647 0 0</pose>
+        <child>front_right_wheel</child>
+        <parent>chassis</parent>
+        <axis>
+          <xyz>0 0 1</xyz>
+          <limit>
+            <!-- +- 50 degrees -->
+            <lower>-0.8727</lower>
+            <upper>0.8727</upper>
+          </limit>
+        </axis>
+        <axis2>
+          <xyz>1 0 0</xyz>
+          <dynamics>
+            <friction>18.0474092253</friction>
+          </dynamics>
+        </axis2>
+      </joint>
+
+      <!-- 后轴link -->
+      <link name="rear_axle">
+        <pose>-1.45 0 0.3 0 0 0</pose>
+        <inertial>
+          <mass>30.0</mass>
+          <inertia>
+            <ixx>0.08437499999999999</ixx>
+            <ixy>0.0</ixy>
+            <iyy>4.64581</iyy>
+            <ixz>0.0</ixz>
+            <iyz>0.0</iyz>
+            <izz>4.64581</izz>
+          </inertia>
+        </inertial>
+        <visual name="visual">
+          <pose>0.0 0.0 0.0 0 1.5707963267948966 0</pose>
+          <geometry>
+            <cylinder>
+              <length>1.357</length>
+              <radius>0.075</radius>
+            </cylinder>
+          </geometry>
+          <material>
+            <script>
+              <name>Gazebo/Grey</name>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+            </script>
+          </material>
+        </visual>
+      </link>
+
+      <!-- 后轴关节 -->
+      <!-- 它的作用是连接"rear_axle"和"chassis"两个部分，允许它们在一个轴上绕旋转。这种旋转关节通常用于车辆的悬挂系统。 -->
+      <joint type="revolute" name="rear_axle_joint">        <!--允许它们在一个轴上绕旋转-->
+        <child>rear_axle</child>
+        <parent>chassis</parent>
+        <axis>
+          <xyz>0 1 0</xyz>
+          <limit>
+            <lower>-0.05089058524173028</lower>
+            <upper>0.05089058524173028</upper>
+          </limit>
+          <!-- 包括弹簧刚度和阻尼，用于描述关节的动力学特性 -->
+          <dynamics>
+            <spring_stiffness>20000.0</spring_stiffness>
+            <damping>2000.0</damping>
+          </dynamics>
+        </axis>
+      </joint>
+
+      <!-- 左后轮关节 -->
+      <joint type="revolute" name="rear_left_wheel_joint">
+        <child>rear_left_wheel</child>
+        <parent>rear_axle</parent>
+        <axis>
+          <xyz>1 0 0</xyz>
+          <dynamics>
+            <friction>12.031606150200002</friction>            <!--包括摩擦系数，用于描述关节的摩擦特性。-->
+          </dynamics>
+        </axis>
+      </joint>
+
+      <!--右后轮关节-->
+      <joint type="revolute" name="rear_right_wheel_joint">
+        <child>rear_right_wheel</child>
+        <parent>rear_axle</parent>
+        <axis>
+          <xyz>1 0 0</xyz>
+          <dynamics>
+            <friction>12.031606150200002</friction>            <!--包括摩擦系数，用于描述关节的摩擦特性。-->
+          </dynamics>
+        </axis>
+      </joint>
+
+      <!-- 方向盘关节 -->
+      <joint name="steering_joint" type="revolute">
+        <pose>-0.002 0 0 0 0 0</pose>        <!--表示它在父链接 “chassis” 的坐标系中偏移 (-0.002, 0, 0) 并且没有旋转。这个属性用来确定关节的初始位置。-->
+        <parent>chassis</parent>
+        <child>steering_wheel</child>
+        <axis>
+          <!-- 表示关节的旋转轴向，用一个三维向量表示。在这里，轴向是 (-0.964118, 0.000768, 0.265556)，即接近于水平方向。这个属性用来确定关节的运动方向。 -->
+          <!-- 这个向量可能出现在urdf模型中，用来定义关节的旋转轴向。它表示关节的旋转轴向接近于水平方向，与x轴夹角约为165°，与y轴夹角约为90°，与z轴夹角约为75°。 -->
+          <xyz>-0.964118 0.000768 0.265556</xyz>
+          <!-- 表示关节的旋转范围，用最小角度和最大角度表示。在这里，最小角度是 -7.85 弧度，最大角度是 7.85 弧度，即约 -450° 和 450°。这个属性用来限制关节的运动范围。。 -->
+          <limit>
+            <lower>-7.85</lower>
+            <upper>7.85</upper>
+          </limit>
+          <!-- 表示关节的动力学属性，用阻尼系数表示。在这里，阻尼系数是 1.0，即关节受到较大的阻力。这个属性用来模拟关节的摩擦效应。 -->
+          <dynamics>
+            <damping>1.0</damping>
+          </dynamics>
+          <use_parent_model_frame>true</use_parent_model_frame>          <!--表示是否使用父链接的坐标系作为关节的坐标系。在这里，设置为 true，即使用父链接 “chassis” 的坐标系作为关节的坐标系。这个属性用来简化关节的定义。-->
+        </axis>
+        <!--表示关节的物理属性，用碰撞力矩（CFM）阻尼系数表示。在这里，CFM阻尼系数是 1，即关节受到较大的碰撞力矩。这个属性用来模拟关节的碰撞效应。 -->
+        <physics>
+          <ode>
+            <cfm_damping>1</cfm_damping>
+          </ode>
+        </physics>
+      </joint>
+
+      <link name="lidar_link">
+        <pose>-0.5 0 1.55 0 0 0</pose>
+        <inertial>
+          <mass>1.0</mass>
+          <inertia>
+            <ixx>0.14583300</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.14583300</iyy>
+            <iyz>0</iyz>
+            <izz>0.12500000</izz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry>
+            <cylinder>
+              <radius>0.178172</radius>
+              <length>0.041845</length>
+            </cylinder>
+          </geometry>
+          <surface>
+            <contact>
+              <ode>
+                <min_depth>0.003</min_depth>
+              </ode>
+            </contact>
+          </surface>
+        </collision>
+
+        <!-- ray sensor -->
+        <sensor type="ray" name="raylidar">
+          <!-- 设置传感器的位置和方向。在这里，它与lidar_link链接共享相同的位置和方向。 -->
+          <pose>0 0 0 0 0 0</pose>
+          <visualize>true</visualize>
+          <update_rate>5.5</update_rate>
+          <!-- 描述激光雷达传感器的属性，如扫描参数、测量范围以及噪声模型。 -->
+          <ray>
+            <scan>
+              <horizontal>
+                <samples>360</samples>
+                <resolution>1.000000</resolution>
+                <min_angle>0.000000</min_angle>
+                <max_angle>6.280000</max_angle>
+              </horizontal>
+            </scan>
+            <range>
+              <min>0.2</min>
+              <max>6.0</max>
+              <resolution>0.015</resolution>
+            </range>
+            <noise>
+              <type>gaussian</type>
+              <mean>0.0</mean>
+              <stddev>0.01</stddev>
+            </noise>
+          </ray>
+          <plugin name="gazebo_raylidar" filename="libgazebo_ros_ray_sensor.so">
+            <ros>
+              <remapping> ~/out:=scan </remapping>
+            </ros>
+            <laser_topic_name>scan</laser_topic_name>
+            <frame_name>lidar_link</frame_name>
+            <output_type>sensor_msgs/LaserScan</output_type>
+          </plugin>
+        </sensor>
+
+        <visual name="visual">
+          <pose>0 0 0 1.302101 0 0</pose>
+          <geometry>
+            <mesh>
+              <uri>model://prius_hybrid/meshes/Hybrid.obj</uri>
+              <scale>0.005 0.005 0.005</scale>
+              <submesh>
+                <name>Steering_Wheel</name>
+                <center>true</center>
+              </submesh>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>
+
+      <joint name="lidar_fixed" type="fixed">
+        <pose>-0.002 0 0 0 0 0</pose>
+        <parent>chassis</parent>
+        <child>lidar_link</child>
+        <axis>
+          <xyz>-0.964118 0.000768 0.265556</xyz>
+        </axis>
+        <physics>
+          <ode>
+            <cfm_damping>1</cfm_damping>
+          </ode>
+        </physics>
+      </joint>
+
+
+
+      <plugin name='ackermann_drive' filename='libgazebo_ros_ackermann_drive.so'>
+        <!-- 表示插件与ROS的交互方式，包括命名空间、话题重映射等 -->
+        <ros>
+          <namespace>demo</namespace>
+          <remapping>cmd_vel:=cmd_demo</remapping>
+          <remapping>odom:=odom_demo</remapping>          <!--提供车辆的里程计和行驶距离等信息-->
+          <remapping>distance:=distance_demo</remapping>
+        </ros>
+
+        <!-- 表示插件的更新频率 -->
+        <update_rate>100.0</update_rate>
+
+        <!-- wheels -->
+        <front_left_joint>front_left_combined_joint</front_left_joint>
+        <front_right_joint>front_right_combined_joint</front_right_joint>
+        <rear_left_joint>rear_left_wheel_joint</rear_left_joint>
+        <rear_right_joint>rear_right_wheel_joint</rear_right_joint>
+        <left_steering_joint>front_left_combined_joint</left_steering_joint>
+        <right_steering_joint>front_right_combined_joint</right_steering_joint>
+        <steering_wheel_joint>steering_joint</steering_wheel_joint>
+
+        <!-- Max absolute steer angle for tyre in radians-->
+        <!-- Any cmd_vel angular z greater than this would be capped -->
+        <!-- 表示车辆前轮的最大绝对转向角度，单位是弧度。在这里，最大转向角度是0.6458弧度，即约37°。如果cmd_vel话题中的角速度大于这个值，则会被限制在这个范围内。 -->
+        <max_steer>0.6458</max_steer>
+
+        <!-- Max absolute steering angle of steering wheel -->
+        <!-- 表示方向盘的最大绝对转动角度，单位是弧度。在这里，最大转动角度是7.85弧度，即约450°。 -->
+        <max_steering_angle>7.85</max_steering_angle>
+
+        <!-- Max absolute linear speed in m/s -->
+        <!-- 示车辆的最大绝对线速度，单位是m/s。在这里，最大线速度是20m/s。如果cmd_vel话题中的线速度大于这个值，则会被限制在这个范围内。 -->
+        <max_speed>20</max_speed>
+
+        <!-- PID tuning -->
+        <!-- 表示插件使用的PID控制器（比例-积分-微分控制器）的参数设置，包括增益（gain）和积分范围（i_range）。在这里，分别设置了左右前轮转向关节和后轮驱动关节的PID参数。 -->
+        <left_steering_pid_gain>1500 0 1</left_steering_pid_gain>
+        <left_steering_i_range>0 0</left_steering_i_range>
+        <right_steering_pid_gain>1500 0 1</right_steering_pid_gain>
+        <right_steering_i_range>0 0</right_steering_i_range>
+        <linear_velocity_pid_gain>1000 0 1</linear_velocity_pid_gain>
+        <linear_velocity_i_range>0 0</linear_velocity_i_range>
+
+        <!-- output -->
+        <!-- 表示插件发布的输出信息，包括odom、odom_tf、wheel_tf、distance等话题。在这里，都设置为true，即都发布相应的话题。 -->
+        <publish_odom>true</publish_odom>
+        <publish_odom_tf>true</publish_odom_tf>
+        <publish_wheel_tf>true</publish_wheel_tf>
+        <publish_distance>true</publish_distance>
+
+        <!-- 表示odom话题中使用的里程计坐标系名称。在这里，里程计坐标系名称是odom_demo。 -->
+        <odometry_frame>odom_demo</odometry_frame>
+        <!-- 表示odom话题中使用的机器人基座坐标系名称。在这里，机器人基座坐标系名称是chassis。 -->
+        <robot_base_frame>chassis</robot_base_frame>
+
+      </plugin>
+
+
+
+      <!-- lidar sensor -->
+      <!-- <gazebo reference="lidar_link">
+        <sensor type="ray" name="raylidar">
+          <pose>0 0 0 0 0 0</pose>
+          <visualize>true</visualize>
+          <update_rate>5.5</update_rate>
+          <ray>
+            <scan>
+              <horizontal>
+                <samples>360</samples>
+                <resolution>1</resolution>
+                <min_angle>-3</min_angle>
+                <max_angle>3</max_angle>
+              </horizontal>
+            </scan>
+            <range>
+              <min>0.10</min>
+              <max>6.0</max>
+              <resolution>0.01</resolution>
+            </range>
+            <noise>
+              <type>gaussian</type>
+              <mean>0.0</mean>
+              <stddev>0.01</stddev>
+            </noise>
+          </ray>
+          <plugin name="gazebo_raylidar" filename="libgazebo_ros_ray_sensor.so">
+            <ros>
+              <remapping> ~/out:=scan </remapping>
+            </ros>
+            <laser_topic_name>scan</laser_topic_name>
+            <frame_name>lidar_link</frame_name>
+            <output_type>sensor_msgs/LaserScan</output_type>
+          </plugin>
+        </sensor>
+      </gazebo> -->
+
+    </model>
+  </world>
+</sdf>

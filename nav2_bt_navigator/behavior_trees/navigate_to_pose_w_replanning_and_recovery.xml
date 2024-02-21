@@ -1,0 +1,114 @@
+<!--
+  This Behavior Tree replans the global path periodically at 1 Hz and it also has
+  recovery actions specific to planning / control as well as general system issues.
+  This will be continuous if a kinematically valid planner is selected.
+-->
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <RecoveryNode number_of_retries="6" name="NavigateRecovery">
+      <PipelineSequence name="NavigateWithReplanning">
+        <RateController hz="0.001">
+          <RecoveryNode number_of_retries="1" name="ComputePathToPose">
+            <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+            <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
+          </RecoveryNode>
+        </RateController>
+        <RecoveryNode number_of_retries="1" name="FollowPath">
+          <FollowPath path="{path}" controller_id="FollowPath"/>
+          <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
+        </RecoveryNode>
+      </PipelineSequence>
+      <ReactiveFallback name="RecoveryFallback">
+        <GoalUpdated/>
+        <RoundRobin name="RecoveryActions">
+          <Sequence name="ClearingActions">
+            <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
+            <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
+          </Sequence>
+          <!-- <Spin spin_dist="1.57"/>
+          <Wait wait_duration="5"/> -->
+          <BackUp backup_dist="0.80" backup_speed="0.15"/>
+          <BackUp backup_dist="0.80" backup_speed="0.15"/>
+          <BackUp backup_dist="0.80" backup_speed="0.15"/>
+        </RoundRobin>
+      </ReactiveFallback>
+    </RecoveryNode>
+  </BehaviorTree>
+</root>
+
+
+
+<!--
+  这个行为树的目的是周期性地以1 Hz重新规划全局路径，并包含了一些特定于规划/控制以及一般系统问题的恢复行为。如果选择了一个运动学有效的规划器，这将持续进行。
+-->
+
+<!-- 根节点 -->
+<!-- <root main_tree_to_execute="MainTree">
+
+  <!-- 主行为树 -->
+<BehaviorTree ID="MainTree">
+
+  <!-- 恢复节点 -->
+  <RecoveryNode number_of_retries="6" name="NavigateRecovery">
+
+    <!-- 流水线序列，用于周期性重新规划全局路径 -->
+    <PipelineSequence name="NavigateWithReplanning">
+
+      <!-- 频率控制器，以1 Hz的频率执行子节点 -->
+      <RateController hz="1.0">
+
+        <!-- 恢复节点，尝试1次 -->
+        <RecoveryNode number_of_retries="1" name="ComputePathToPose">
+
+          <!-- 计算到达目标姿势的路径，使用GridBased规划器 -->
+          <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+
+          <!-- 清除全局代价地图的上下文 -->
+          <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
+        </RecoveryNode>
+
+      </RateController>
+
+      <!-- 另一个恢复节点，尝试1次 -->
+      <RecoveryNode number_of_retries="1" name="FollowPath">
+
+        <!-- 跟随给定路径，使用FollowPath控制器 -->
+        <FollowPath path="{path}" controller_id="FollowPath"/>
+
+        <!-- 清除局部代价地图的上下文 -->
+        <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
+      </RecoveryNode>
+
+    </PipelineSequence>
+
+    <!-- 回退节点，用于处理恢复时的回退情况 -->
+    <ReactiveFallback name="RecoveryFallback">
+
+      <!-- 如果目标更新，执行此节点 -->
+      <GoalUpdated/>
+
+      <!-- 循环轮询执行子节点 -->
+      <RoundRobin name="RecoveryActions">
+
+        <!-- 顺序执行清除局部和全局代价地图的节点 -->
+        <Sequence name="ClearingActions">
+          <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
+          <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
+        </Sequence>
+
+        <!-- 备份动作，以一定距离和速度后退 -->
+        <!-- 此处的Spin和Wait节点被注释掉，可能是暂时不需要的或者是注释掉的功能 -->
+        <!-- <Spin spin_dist="1.57"/>
+          <Wait wait_duration="5"/> -->
+        <BackUp backup_dist="0.30" backup_speed="0.05"/>
+
+      </RoundRobin>
+
+    </ReactiveFallback>
+
+  </RecoveryNode>
+
+</BehaviorTree>
+
+</root>
+ -->
