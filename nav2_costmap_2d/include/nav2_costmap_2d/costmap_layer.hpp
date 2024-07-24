@@ -51,6 +51,13 @@ namespace nav2_costmap_2d
  * Rather than just a layer, this object also contains an internal
  * costmap object to populate and maintain state.
  */
+
+
+/**
+ * @class CostmapLayer
+ * @brief 一个用于代价图插件层的代价图层基类。
+ * 这个对象不仅仅是一个层，它还包含一个内部的代价图对象用于填充和维护状态。
+ */
 class CostmapLayer : public Layer, public Costmap2D
 {
 public:
@@ -79,6 +86,11 @@ public:
    * @brief Clear an are in the costmap with the given dimension
    * if invert, then clear everything except these dimensions
    */
+
+    /**
+    @brief 在代价图中清除给定尺寸的区域。
+    如果设置了invert参数，那么清除除这些尺寸之外的所有区域。
+  */
   virtual void clearArea(int start_x, int start_y, int end_x, int end_y, bool invert);
 
   /**
@@ -90,6 +102,14 @@ public:
    * @param mx1 Maximum x value of the bounding box
    * @param my1 Maximum y value of the bounding box
    */
+
+  /**
+ * 如果外部源更改了成本地图中的值，它应该调用这个方法，并提供它更改的区域，以确保成本地图也包括这个区域。
+ * @param mx0 边界框的最小x值
+ * @param my0 边界框的最小y值
+ * @param mx1 边界框的最大x值
+ * @param my1 边界框的最大y值
+ */
   void addExtraBounds(double mx0, double my0, double mx1, double my1);
 
 protected:
@@ -99,6 +119,12 @@ protected:
    *
    * TrueOverwrite means every value from this layer
    * is written into the master grid.
+   */
+
+  /*
+   * 使用本层的值，在指定的边界框内更新 master_grid。
+   *
+   * TrueOverwrite 意味着从本层的每个值都被写入到 master_grid 中。
    */
   void updateWithTrueOverwrite(
     nav2_costmap_2d::Costmap2D & master_grid,
@@ -123,6 +149,14 @@ protected:
    * and this layer's value. If the master value is NO_INFORMATION,
    * it is overwritten. If the layer's value is NO_INFORMATION,
    * the master value does not change.
+   */
+
+
+  /*
+   * 在指定的边界框内，使用本层的值更新 master_grid。
+   *
+   * 将新值设置为 master_grid 的值和本层的值中的较大值。如果 master_grid 的值是 NO_INFORMATION（无信息），则会被覆盖。
+   * 如果本层的值是 NO_INFORMATION，master_grid 的值则不变。
    */
   void updateWithMax(
     nav2_costmap_2d::Costmap2D & master_grid, int min_i, int min_j, int max_i,
@@ -168,6 +202,18 @@ protected:
    * @param min_y bounding box (input and output)
    * @param max_x bounding box (input and output)
    * @param max_y bounding box (input and output)
+   */
+
+  /*
+   * 更新在参数中指定的边界框，以包含从 addExtraBounds 调用中的边界框。
+   * 如果没有调用 addExtraBounds，则该方法将不执行任何操作。
+   *
+   * 应该在 updateBounds 方法的开始时调用
+   *
+   * @param min_x 边界框（输入和输出）
+   * @param min_y 边界框（输入和输出）
+   * @param max_x 边界框（输入和输出）
+   * @param max_y 边界框（输入和输出）
    */
   void useExtraBounds(double * min_x, double * min_y, double * max_x, double * max_y);
   bool has_extra_bounds_;

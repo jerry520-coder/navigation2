@@ -78,6 +78,11 @@ public:
  * @brief Layer to convolve costmap by robot's radius or footprint to prevent
  * collisions and largely simply collision checking
  */
+
+/**
+ * @class InflationLayer
+ * @brief 用于将成本地图通过机器人的半径或足迹进行卷积，以防止碰撞并大大简化碰撞检查
+ */
 class InflationLayer : public Layer
 {
 public:
@@ -145,18 +150,28 @@ public:
   /** @brief  Given a distance, compute a cost.
    * @param  distance The distance from an obstacle in cells
    * @return A cost value for the distance */
+
+  /**
+   * @brief 计算距离对应的成本
+   *
+   * @param distance 距离
+   * @return unsigned char 对应的成本
+   */
   inline unsigned char computeCost(double distance) const
   {
     unsigned char cost = 0;
     if (distance == 0) {
+      // 如果距离为 0，则成本为致命障碍物
       cost = LETHAL_OBSTACLE;
     } else if (distance * resolution_ <= inscribed_radius_) {
+      // 如果距离乘以分辨率小于等于内切半径，则成本为内切膨胀障碍物
       cost = INSCRIBED_INFLATED_OBSTACLE;
     } else {
-      // make sure cost falls off by Euclidean distance
+      // 否则根据欧几里得距离计算成本
       double factor =
         exp(-1.0 * cost_scaling_factor_ * (distance * resolution_ - inscribed_radius_));
-      cost = static_cast<unsigned char>((INSCRIBED_INFLATED_OBSTACLE - 1) * factor);
+      cost = static_cast<unsigned char>((INSCRIBED_INFLATED_OBSTACLE - 1) * factor); 
+      // 增大 cost_scaling_factor_ 将减少生成的成本值，最终的 cost 值会更快地减小到较低的数值
     }
     return cost;
   }

@@ -31,13 +31,17 @@ void TwirlingCritic::initialize()
 void TwirlingCritic::score(CriticData & data)
 {
   using xt::evaluation_strategy::immediate;
+  // 如果该批评者未启用，或者机器人已经在目标位置容忍范围内，则不计算成本
   if (!enabled_ ||
     utils::withinPositionGoalTolerance(data.goal_checker, data.state.pose.pose, data.path))
   {
     return;
   }
-
+// 获取机器人当前的角速度z分量的绝对值
   const auto wz = xt::abs(data.state.wz);
+
+  // 该值基于机器人旋转的速度，旋转越快，代价值越高，这样可以鼓励机器人采取更少旋转的路径。
+  // 计算wz的平均值
   data.costs += xt::pow(xt::mean(wz, {1}, immediate) * weight_, power_);
 }
 

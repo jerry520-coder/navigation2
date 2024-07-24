@@ -24,7 +24,7 @@ namespace mppi::critics
 
 /**
  * @class mppi::critics::ConstraintCritic
- * @brief Critic objective function for driving towards goal orientation
+ * @brief goal导向的批判目标函数。Critic objective function for driving towards goal orientation
  */
 class GoalAngleCritic : public CriticFunction
 {
@@ -36,7 +36,7 @@ public:
 
   /**
    * @brief Evaluate cost related to robot orientation at goal pose
-   * (considered only if robot near last goal in current plan)
+   * (仅当机器人接近当前规划中的最后一个目标时才考虑。considered only if robot near last goal in current plan) 全局路径的截取的一段
    *
    * @param costs [out] add goal angle cost values to this tensor
    */

@@ -59,7 +59,7 @@ enum VoxelStatus
 {
   FREE = 0,
   UNKNOWN = 1,
-  MARKED = 2,
+  MARKED = 2, //已标记
 };
 
 class VoxelGrid

@@ -43,7 +43,7 @@
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<nav2_costmap_2d::Costmap2DROS>("costmap");
+  auto node = std::make_shared<nav2_costmap_2d::Costmap2DROS>("costmap"); //用于创建任何类型的对象（包括 ROS 2 的特定类）
   rclcpp::spin(node->get_node_base_interface());
   rclcpp::shutdown();
 

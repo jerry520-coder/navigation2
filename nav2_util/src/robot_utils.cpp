@@ -30,6 +30,7 @@ bool getCurrentPose(
   const std::string robot_frame, const double transform_timeout,
   const rclcpp::Time stamp)
 {
+  //tf2::Transform::getIdentity() 返回一个单位变换矩阵，表示没有旋转和平移的变换。
   tf2::toMsg(tf2::Transform::getIdentity(), global_pose.pose);
   global_pose.header.frame_id = robot_frame;
   global_pose.header.stamp = stamp;
@@ -47,6 +48,7 @@ bool transformPoseInTargetFrame(
   static rclcpp::Logger logger = rclcpp::get_logger("transformPoseInTargetFrame");
 
   try {
+     // 尝试进行坐标变换
     transformed_pose = tf_buffer.transform(
       input_pose, target_frame,
       tf2::durationFromSec(transform_timeout));
@@ -54,23 +56,23 @@ bool transformPoseInTargetFrame(
   } catch (tf2::LookupException & ex) {
     RCLCPP_ERROR(
       logger,
-      "No Transform available Error looking up target frame: %s\n", ex.what());
+      "No Transform available Error looking up target frame: %s\n", ex.what());// 处理坐标系查找失败的异常
   } catch (tf2::ConnectivityException & ex) {
     RCLCPP_ERROR(
       logger,
-      "Connectivity Error looking up target frame: %s\n", ex.what());
+      "Connectivity Error looking up target frame: %s\n", ex.what()); // 处理坐标变换路径中断开的异常
   } catch (tf2::ExtrapolationException & ex) {
     RCLCPP_ERROR(
       logger,
-      "Extrapolation Error looking up target frame: %s\n", ex.what());
+      "Extrapolation Error looking up target frame: %s\n", ex.what());// 处理无法外推错误的异常
   } catch (tf2::TimeoutException & ex) {
     RCLCPP_ERROR(
       logger,
-      "Transform timeout with tolerance: %.4f", transform_timeout);
+      "Transform timeout with tolerance: %.4f", transform_timeout);// 处理坐标变换请求超时的异常
   } catch (tf2::TransformException & ex) {
     RCLCPP_ERROR(
       logger, "Failed to transform from %s to %s",
-      input_pose.header.frame_id.c_str(), target_frame.c_str());
+      input_pose.header.frame_id.c_str(), target_frame.c_str()); // 处理其他所有坐标变换相关的异常
   }
 
   return false;
@@ -144,6 +146,7 @@ bool getTransform(
 
 bool validateTwist(const geometry_msgs::msg::Twist & msg)
 {
+    // 检查线速度分量 x 是否包含 NaN 或 Inf
   if (std::isinf(msg.linear.x) || std::isnan(msg.linear.x)) {
     return false;
   }

@@ -86,6 +86,14 @@ public:
    * @param goal_checker Ptr to the goal checker for this task in case useful in computing commands
    * @return          Best command
    */
+
+  /**
+ * @brief 计算给定当前姿态和速度的最佳命令
+ * @param pose      Current robot pose。 获取global_frame的当前位姿
+ * @param velocity  Current robot velocity 。 里程计的速度
+ * @param goal_checker 本任务的目标检查器指针，用于计算命令时可能会用到
+ * @return          最佳命令
+ */
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
     const geometry_msgs::msg::Twist & velocity,
@@ -113,6 +121,12 @@ protected:
    * May throw exception if a point at least that far away cannot be found
    * @return pt location of the output point
    */
+
+  /**
+ * @brief 寻找路径上粗略与机器人采样点距离相等的点以供使用。如果找不到至少那么远的点，可能会抛出异常
+ * @return pt 输出点的位置
+ * @note forward_sampling_distance: 0.5 #沿路径向前的距离（以米计），用于选择一个采样点来近似路径航向
+ */
   geometry_msgs::msg::PoseStamped getSampledPathPt();
 
   /**
@@ -120,6 +134,12 @@ protected:
    * @param pt location of the sampled path point
    * @return location of the pose in base frame
    */
+
+  /**
+ * @brief 使用 TF来查找base frame坐标系中采样路径点的位置
+ * @param pt 采样路径点的位置
+ * @return base frame坐标系中姿态的位置
+ */
   geometry_msgs::msg::Pose transformPoseToBaseFrame(const geometry_msgs::msg::PoseStamped & pt);
 
   /**
@@ -129,6 +149,14 @@ protected:
    * @param velocity Starting velocity of robot
    * @return Twist command for rotation to rough heading
    */
+
+  /**
+ * @brief 旋转机器人至大致朝向
+ * @param angular_distance 到目标剩余的角距离
+ * @param pose 机器人的起始姿态
+ * @param velocity 机器人的起始速度
+ * @return Twist 命令，用于旋转至大致朝向
+ */
   geometry_msgs::msg::TwistStamped computeRotateToHeadingCommand(
     const double & angular_distance,
     const geometry_msgs::msg::PoseStamped & pose,
@@ -140,6 +168,13 @@ protected:
    * @param angular_distance_to_heading Angular distance to heading requested
    * @param pose Starting pose of robot
    */
+
+  /**
+ * @brief 检查rotation是否安全
+ * @param cmd_vel 需要检查的速度
+ * @param angular_distance_to_heading 请求的朝向的角距离
+ * @param pose 机器人的起始姿态
+ */
   void isCollisionFree(
     const geometry_msgs::msg::TwistStamped & cmd_vel,
     const double & angular_distance_to_heading,

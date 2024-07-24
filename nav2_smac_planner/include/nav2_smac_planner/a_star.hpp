@@ -89,6 +89,15 @@ public:
    * @param max_planning_time Maximum time (in seconds) to wait for a plan, createPath returns
    * false after this timeout
    */
+
+  /**
+ * @brief 使用默认设置初始化规划器
+ * @param allow_unknown 允许在未知空间中搜索，适用于边建图边导航的情况
+ * @param max_iterations 扩展搜索时使用的最大迭代次数
+ * @param max_on_approach_iterations 在接近目标阈值范围内，返回有效路径前的最大迭代次数，
+ * 使用更多的计算时间但能得到更平滑的路径。
+ * @param max_planning_time 等待规划结果的最大时间（以秒为单位），超时后createPath返回false
+ */
   void initialize(
     const bool & allow_unknown,
     int & max_iterations,
@@ -104,11 +113,20 @@ public:
    * @param tolerance Reference to tolerance in costmap nodes
    * @return if plan was successful
    */
+
+  /**
+ * @brief 从给定的成本地图、起点和终点创建路径
+ * @param path 对生成路径的索引向量的引用
+ * @param num_iterations 对创建计划所需迭代次数的引用
+ * @param tolerance 对成本地图节点的容差的引用
+ * @return 如果规划成功创建，则返回true
+ */
   bool createPath(CoordinateVector & path, int & num_iterations, const float & tolerance);
 
   /**
    * @brief Sets the collision checker to use
    * @param collision_checker Collision checker to use for checking state validity
+   * @note 设置碰撞检查器，用于在 A* 算法中判断节点是否可通过
    */
   void setCollisionChecker(GridCollisionChecker * collision_checker);
 
@@ -118,6 +136,13 @@ public:
    * @param my The node Y index of the goal
    * @param dim_3 The node dim_3 index of the goal
    */
+
+  /**
+ * @brief 设置规划目标，作为节点索引
+ * @param mx 目标的节点X索引
+ * @param my 目标的节点Y索引
+ * @param dim_3 目标的节点dim_3索引
+ */
   void setGoal(
     const unsigned int & mx,
     const unsigned int & my,
@@ -127,7 +152,7 @@ public:
    * @brief Set the starting pose for planning, as a node index
    * @param mx The node X index of the goal
    * @param my The node Y index of the goal
-   * @param dim_3 The node dim_3 index of the goal
+   * @param dim_3 The node dim_3 index of the goal.表示目标节点的第三个维度的索引
    */
   void setStart(
     const unsigned int & mx,
@@ -180,6 +205,11 @@ public:
    * @brief Get number of angle quantization bins (SE2) or Z coordinate  (XYZ)
    * @return Number of angle bins / Z dimension
    */
+
+  /**
+ * @brief 获取角度量化的bins数（SE2情况下）或Z坐标（XYZ情况下）
+ * @return 角度箱数或Z维度的数量
+ */
   unsigned int & getSizeDim3();
 
 protected:

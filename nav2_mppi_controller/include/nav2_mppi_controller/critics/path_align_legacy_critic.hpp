@@ -30,6 +30,14 @@ namespace mppi::critics
  * This is an important critic to tune and consider in tandem with Obstacle.
  * This is the initial 'Legacy' implementation before replacement Oct 2023.
  */
+
+/**
+ * @class mppi::critics::PathAlignLegacyCritic
+ * @brief 用于路径对齐的评价器目标函数。注意：
+ * 此项设置较高会更精确地遵循路径，但也会使得在动态障碍物存在时偏离路径变得困难（或不可能）。
+ * 这是一个重要的评价器，需要与障碍物评价器一起调整和考虑。
+ * 这是2023年10月前替换的初始'Legacy'实现。
+ */
 class PathAlignLegacyCritic : public CriticFunction
 {
 public:

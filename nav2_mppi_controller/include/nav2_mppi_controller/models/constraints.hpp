@@ -20,7 +20,7 @@ namespace mppi::models
 
 /**
  * @struct mppi::models::ControlConstraints
- * @brief Constraints on control
+ * @brief Constraints on control。vx_max/vx_min/vy/wz
  */
 struct ControlConstraints
 {
@@ -32,7 +32,7 @@ struct ControlConstraints
 
 /**
  * @struct mppi::models::SamplingStd
- * @brief Noise parameters for sampling trajectories
+ * @brief Noise parameters for sampling trajectories。vx/vy/wz
  */
 struct SamplingStd
 {

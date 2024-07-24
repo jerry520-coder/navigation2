@@ -84,7 +84,7 @@ std::vector<geometry_msgs::msg::Point> toPointVector(
   geometry_msgs::msg::Polygon::SharedPtr polygon);
 
 /**
- * @brief  Given a pose and base footprint, build the oriented footprint of the robot (list of Points)
+ * @brief  Given a pose and base footprint, build the oriented footprint of the robot (list of Points)。给定姿势和基本足迹，构建机器人的定向足迹（点列表）
  * @param  x The x position of the robot
  * @param  y The y position of the robot
  * @param  theta The orientation of the robot
@@ -97,7 +97,7 @@ void transformFootprint(
   std::vector<geometry_msgs::msg::Point> & oriented_footprint);
 
 /**
- * @brief  Given a pose and base footprint, build the oriented footprint of the robot (PolygonStamped)
+ * @brief  Given a pose and base footprint, build the oriented footprint of the robot (PolygonStamped)。给定姿势和基本足迹，构建机器人的定向足迹（PolygonStamped）
  * @param  x The x position of the robot
  * @param  y The y position of the robot
  * @param  theta The orientation of the robot
@@ -110,7 +110,7 @@ void transformFootprint(
   geometry_msgs::msg::PolygonStamped & oriented_footprint);
 
 /**
- * @brief Adds the specified amount of padding to the footprint (in place)
+ * @brief Adds the specified amount of padding to the footprint (in place)。将指定数量的填充添加到足迹（就位）
  */
 void padFootprint(std::vector<geometry_msgs::msg::Point> & footprint, double padding);
 
@@ -123,6 +123,13 @@ std::vector<geometry_msgs::msg::Point> makeFootprintFromRadius(double radius);
  * @brief Make the footprint from the given string.
  *
  * Format should be bracketed array of arrays of floats, like so: [[1.0, 2.2], [3.3, 4.2], ...]
+ *
+ */
+
+/**
+ * @brief 从给定的字符串生成足迹。
+ *
+ * 格式应该是括号内的数组，其中包含浮点数的数组，像这样：[[1.0, 2.2], [3.3, 4.2], ...]
  *
  */
 bool makeFootprintFromString(

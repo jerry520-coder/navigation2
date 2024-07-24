@@ -27,18 +27,19 @@ namespace mppi::models
  */
 struct OptimizerSettings
 {
-  models::ControlConstraints base_constraints{0, 0, 0, 0};
-  models::ControlConstraints constraints{0, 0, 0, 0};
-  models::SamplingStd sampling_std{0, 0, 0};
-  float model_dt{0};
-  float temperature{0};
-  float gamma{0};
-  unsigned int batch_size{0};
-  unsigned int time_steps{0};
-  unsigned int iteration_count{0};
-  bool shift_control_sequence{false};
-  size_t retry_attempt_limit{0};
+  models::ControlConstraints base_constraints{0, 0, 0, 0};  /**< 基础控制约束 */
+  models::ControlConstraints constraints{0, 0, 0, 0};      /**< 控制约束 */
+  models::SamplingStd sampling_std{0, 0, 0};               /**< 采样标准差 */
+  float model_dt{0};                                       /**< 模型时间步长 */
+  float temperature{0};                                    /**< 温度参数 */
+  float gamma{0};                                          /**< Gamma 参数 */
+  unsigned int batch_size{0};                              /**< 批量大小 */
+  unsigned int time_steps{0};                              /**< 时间步数 */
+  unsigned int iteration_count{0};                         /**< 迭代次数 */
+  bool shift_control_sequence{false};                      /**< 是否移动控制序列 */
+  size_t retry_attempt_limit{0};                           /**< 重试尝试限制 */
 };
+
 
 }  // namespace mppi::models
 

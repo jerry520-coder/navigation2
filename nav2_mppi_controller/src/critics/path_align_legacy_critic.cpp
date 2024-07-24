@@ -46,6 +46,7 @@ void PathAlignLegacyCritic::initialize()
 void PathAlignLegacyCritic::score(CriticData & data)
 {
   // Don't apply close to goal, let the goal critics take over
+   // 如果模块未启用，或者机器人已经在目标容忍范围内，不应用此评分
   if (!enabled_ ||
     utils::withinPositionGoalTolerance(threshold_to_consider_, data.state.pose.pose, data.path))
   {
@@ -53,12 +54,14 @@ void PathAlignLegacyCritic::score(CriticData & data)
   }
 
   // Don't apply when first getting bearing w.r.t. the path
+  // 如果机器人刚开始获得相对于路径的航向，不应用此评分
   utils::setPathFurthestPointIfNotSet(data);
   if (*data.furthest_reached_path_point < offset_from_furthest_) {
     return;
   }
 
   // Don't apply when dynamic obstacles are blocking significant proportions of the local path
+  // 如果动态障碍物阻挡了路径的大部分，不应用此评分
   utils::setPathCostsIfNotSet(data, costmap_ros_);
   const size_t closest_initial_path_point = utils::findPathTrajectoryInitialPoint(data);
   unsigned int invalid_ctr = 0;
@@ -70,28 +73,31 @@ void PathAlignLegacyCritic::score(CriticData & data)
     }
   }
 
+// 获取轨迹点的x, y坐标和偏航角
   const auto & T_x = data.trajectories.x;
   const auto & T_y = data.trajectories.y;
   const auto & T_yaw = data.trajectories.yaws;
-
+ // 获取路径点的x, y坐标和偏航角
   const auto P_x = xt::view(data.path.x, xt::range(_, -1));  // path points
   const auto P_y = xt::view(data.path.y, xt::range(_, -1));  // path points
   const auto P_yaw = xt::view(data.path.yaws, xt::range(_, -1));  // path points
 
+// 获取批量大小、时间步长和评估的轨迹点数量
   const size_t batch_size = T_x.shape(0);
   const size_t time_steps = T_x.shape(1);
   const size_t traj_pts_eval = floor(time_steps / trajectory_point_step_);
   const size_t path_segments_count = data.path.x.shape(0) - 1;
   auto && cost = xt::xtensor<float, 1>::from_shape({data.costs.shape(0)});
 
+ // 如果路径段数小于1，直接返回
   if (path_segments_count < 1) {
     return;
   }
-
+// 初始化距离平方、dx, dy, dyaw和累加距离
   float dist_sq = 0.0f, dx = 0.0f, dy = 0.0f, dyaw = 0.0f, summed_dist = 0.0f;
   float min_dist_sq = std::numeric_limits<float>::max();
   size_t min_s = 0;
-
+ // 对每个批量轨迹进行评分
   for (size_t t = 0; t < batch_size; ++t) {
     summed_dist = 0.0f;
     for (size_t p = trajectory_point_step_; p < time_steps; p += trajectory_point_step_) {
@@ -99,10 +105,13 @@ void PathAlignLegacyCritic::score(CriticData & data)
       min_s = 0;
 
       // Find closest path segment to the trajectory point
+       // 找到最近的路径段
       for (size_t s = 0; s < path_segments_count - 1; s++) {
+        // 创建一个临时的路径点
         xt::xtensor_fixed<float, xt::xshape<2>> P;
         dx = P_x(s) - T_x(t, p);
         dy = P_y(s) - T_y(t, p);
+         // 如果使用路径方向，则计算偏航角偏差
         if (use_path_orientations_) {
           dyaw = angles::shortest_angular_distance(P_yaw(s), T_yaw(t, p));
           dist_sq = dx * dx + dy * dy + dyaw * dyaw;
@@ -117,14 +126,17 @@ void PathAlignLegacyCritic::score(CriticData & data)
 
       // The nearest path point to align to needs to be not in collision, else
       // let the obstacle critic take over in this region due to dynamic obstacles
+      // 需要对齐的最近路径点不能发生碰撞，否则，由于动态障碍物，让obstacle critic在这个区域接管。
+      // 如果最近的路径点不是在碰撞中，则累加距离
       if (min_s != 0 && (*data.path_pts_valid)[min_s]) {
         summed_dist += sqrtf(min_dist_sq);
       }
     }
-
+// 计算当前轨迹的评分
     cost[t] = summed_dist / traj_pts_eval;
   }
 
+// 将计算出的评分乘以权重并按指数次幂计算，然后累加到总成本中
   data.costs += xt::pow(std::move(cost) * weight_, power_);
 }
 

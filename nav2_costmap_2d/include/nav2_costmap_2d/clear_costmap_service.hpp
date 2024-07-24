@@ -35,6 +35,11 @@ class Costmap2DROS;
  * @class ClearCostmapService
  * @brief Exposes services to clear costmap objects in inclusive/exclusive regions or completely
  */
+
+/**
+ * @class ClearCostmapService
+ * @brief 提供服务以清除成本地图中包含/排除区域或完全清除的对象
+ */
 class ClearCostmapService
 {
 public:
@@ -72,7 +77,7 @@ private:
   // Server for clearing the costmap
   rclcpp::Service<nav2_msgs::srv::ClearCostmapExceptRegion>::SharedPtr clear_except_service_;
   /**
-   * @brief Callback to clear costmap except in a given region
+   * @brief Callback to clear costmap except in a given region。回调以清除成本图，指定区域除外
    */
   void clearExceptRegionCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
@@ -81,7 +86,7 @@ private:
 
   rclcpp::Service<nav2_msgs::srv::ClearCostmapAroundRobot>::SharedPtr clear_around_service_;
   /**
-   * @brief Callback to clear costmap in a given region
+   * @brief Callback to clear costmap in a given region。回调以清除给定区域中的成本图
    */
   void clearAroundRobotCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
@@ -98,7 +103,7 @@ private:
     const std::shared_ptr<nav2_msgs::srv::ClearEntireCostmap::Response> response);
 
   /**
-   * @brief  Function used to clear a given costmap layer
+   * @brief  Function used to clear a given costmap layer。用于清除指定成本图层的函数
    */
   void clearLayerRegion(
     std::shared_ptr<CostmapLayer> & costmap, double pose_x, double pose_y, double reset_distance,

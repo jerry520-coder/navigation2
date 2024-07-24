@@ -25,6 +25,11 @@ namespace nav2_costmap_2d
  * @brief Layer filters noise-induced standalone obstacles (white costmap pixels) or
  * small obstacles groups
  */
+
+/**
+ * @class DenoiseLayer
+ * @brief 此层过滤由噪声引起的独立障碍物（成本地图中的白色像素）或小型障碍物群
+ */
 class DenoiseLayer : public Layer
 {
   friend class DenoiseLayerTester;  // For test some private methods using gtest
@@ -48,6 +53,12 @@ public:
    * The method is called to ask the plugin: which area of costmap it needs to update.
    * A layer is essentially a filter, so it never needs to expand bounds.
    */
+
+  /**
+ * @brief 报告不需要进行扩展
+ * 此方法被调用以询问插件：它需要更新代价地图的哪个区域。
+ * 一个层本质上是一个过滤器，因此它永远不需要扩展边界。
+ */
   void updateBounds(
     double robot_x, double robot_y, double robot_yaw,
     double * min_x, double * min_y,

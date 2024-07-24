@@ -237,13 +237,14 @@ nav_msgs::msg::Path SmacPlannerLattice::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
 {
+  // 互斥锁保护，确保在重初始化时不会发生冲突
   std::lock_guard<std::mutex> lock_reinit(_mutex);
-  steady_clock::time_point a = steady_clock::now();
+  steady_clock::time_point a = steady_clock::now();   // 记录开始规划的时间点
 
-  std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(_costmap->getMutex()));
+  std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(_costmap->getMutex()));  // 为成本地图的互斥锁创建一个独占锁
 
   // Set collision checker and costmap information
-  _a_star->setCollisionChecker(&_collision_checker);
+  _a_star->setCollisionChecker(&_collision_checker);// 设置碰撞检查器
 
   // Set starting point, in A* bin search coordinates
   unsigned int mx, my;

@@ -59,7 +59,7 @@ namespace nav2_costmap_2d
 
 /**
  * @class VoxelLayer
- * @brief Takes laser and pointcloud data to populate a 3D voxel representation of the environment
+ * @brief 利用激光和点云数据填充环境的三维体素表示法。Takes laser and pointcloud data to populate a 3D voxel representation of the environment
  */
 class VoxelLayer : public ObstacleLayer
 {
@@ -93,6 +93,17 @@ public:
    * @param max_x X max map coord of the window to update
    * @param max_y Y max map coord of the window to update
    */
+
+  /**
+ * @brief 使用该层的更新尺寸更新主代价地图的边界
+ * @param robot_x 机器人的X坐标
+ * @param robot_y 机器人的Y坐标
+ * @param robot_yaw 机器人的朝向
+ * @param min_x 要更新的窗口的X最小地图坐标
+ * @param min_y 要更新的窗口的Y最小地图坐标
+ * @param max_x 要更新的窗口的X最大地图坐标
+ * @param max_y 要更新的窗口的Y最大地图坐标
+ */
   virtual void updateBounds(
     double robot_x, double robot_y, double robot_yaw, double * min_x,
     double * min_y,
@@ -134,7 +145,7 @@ protected:
   virtual void resetMaps();
 
   /**
-   * @brief Use raycasting between 2 points to clear freespace
+   * @brief 在两点之间使用射线投射清除自由空间。Use raycasting between 2 points to clear freespace
    */
   virtual void raytraceFreespace(
     const nav2_costmap_2d::Observation & clearing_observation,

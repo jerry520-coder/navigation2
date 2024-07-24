@@ -26,7 +26,8 @@ using lifecycle_msgs::msg::Transition;
 
 namespace nav2_util
 {
-
+// RETRY 宏能够在遇到特定异常时，自动尝试重新执行代码，直到成功执行或达到最大重试次数。
+// 这在网络请求或数据库操作中非常有用，可以处理临时的错误或不稳定的外部服务响应。
 #define RETRY(fn, retries) \
   { \
     int count = 0; \
@@ -41,17 +42,22 @@ namespace nav2_util
       } \
     } \
   }
+  //如果 count 超过了 retries，则再次抛出捕获到的异常，结束重试，并将异常传递给更上层的调用者处理。
 
 static void startupLifecycleNode(
   const std::string & node_name,
   const std::chrono::seconds service_call_timeout,
   const int retries)
 {
+   // 创建一个生命周期服务客户端实例，用于管理指定节点的状态转换
   LifecycleServiceClient sc(node_name);
 
   // Despite waiting for the service to be available and using reliable transport
   // service calls still frequently hang. To get reliable startup it's necessary
   // to timeout the service call and retry it when that happens.
+  // 尽管等待服务可用并使用可靠传输，
+  // 服务调用仍然频繁挂起。为了确保可靠的启动，必须设置服务调用的超时并在发生时重试。
+  // 使用RETRY宏来尝试将节点配置到配置状态
   RETRY(
     sc.change_state(Transition::TRANSITION_CONFIGURE, service_call_timeout),
     retries);
@@ -80,6 +86,9 @@ static void resetLifecycleNode(
   // Despite waiting for the service to be available and using reliable transport
   // service calls still frequently hang. To get reliable reset it's necessary
   // to timeout the service call and retry it when that happens.
+  // 尽管等待服务可用并使用可靠传输，
+// 服务调用仍然频繁挂起。为了确保可靠的重置，必须设置服务调用的超时并在发生时重试。
+
   RETRY(
     sc.change_state(Transition::TRANSITION_DEACTIVATE, service_call_timeout),
     retries);

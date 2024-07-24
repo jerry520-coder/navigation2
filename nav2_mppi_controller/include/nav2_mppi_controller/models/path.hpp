@@ -22,7 +22,7 @@ namespace mppi::models
 
 /**
  * @struct mppi::models::Path
- * @brief Path represented as a tensor
+ * @brief Path represented as a tensor. x/y/yaws
  */
 struct Path
 {

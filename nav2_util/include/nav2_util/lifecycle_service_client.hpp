@@ -28,6 +28,7 @@ namespace nav2_util
 {
 
 /// Helper functions to interact with a lifecycle node.
+// 与生命周期节点交互的辅助函数
 class LifecycleServiceClient
 {
 public:

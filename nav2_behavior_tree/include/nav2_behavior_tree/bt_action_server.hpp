@@ -93,6 +93,12 @@ public:
    * @return bool true if the resulting BT correspond to the one in bt_xml_filename. false
    * if something went wrong, and previous BT is maintained
    */
+
+  /**
+ * @brief 用另一个 BT 替换当前的 BT
+ * @param bt_xml_filename 包含新 BT 的文件，如果为空则使用默认文件名
+ * @return bool 如果结果 BT 对应于 bt_xml_filename 中的 BT，则为 true。如果出现问题，并且保持之前的 BT，则为 false
+ */
   bool loadBehaviorTree(const std::string & bt_xml_filename = "");
 
   /**
@@ -126,6 +132,11 @@ public:
    * @brief Wrapper function to accept pending goal if a preempt has been requested
    * @return Shared pointer to pending action goal
    */
+
+  /**
+ * @brief 如果已请求抢占，则接受待处理目标的包装函数
+ * @return 指向待处理动作目标的共享指针
+ */
   const std::shared_ptr<const typename ActionT::Goal> acceptPendingGoal()
   {
     return action_server_->accept_pending_goal();
@@ -199,6 +210,7 @@ protected:
   BT::Tree tree_;
 
   // The blackboard shared by all of the nodes in the tree
+  // 树中所有节点共享的blackboard
   BT::Blackboard::Ptr blackboard_;
 
   // The XML file that cointains the Behavior Tree to create
@@ -231,6 +243,11 @@ protected:
 
   // Default timeout value while waiting for response from a server
   std::chrono::milliseconds default_server_timeout_;
+
+    // Parameters for Groot monitoring
+  bool enable_groot_monitoring_;
+  int groot_zmq_publisher_port_;
+  int groot_zmq_server_port_;
 
   // User-provided callbacks
   OnGoalReceivedCallback on_goal_received_callback_;

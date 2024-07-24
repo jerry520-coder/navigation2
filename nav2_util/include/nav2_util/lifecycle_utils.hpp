@@ -33,6 +33,14 @@ namespace nav2_util
  *            service call.
  * \param[in] retries The number of times to try a state transition service call
  */
+
+/// 按顺序将给定的生命周期节点转换到激活状态ACTIVATED
+/** 目前，服务调用经常因未知原因而挂起。解决这个问题的唯一方法是设置服务调用的超时并重试。要使用此功能，
+ *  请估计节点在每个转换阶段应该花费的时间，并相应地设置超时时间。
+ * \param[in] node_names 要启动的完全限定的节点名称的向量。
+ * \param[in] service_call_timeout 等待服务调用的最大时间。
+ * \param[in] retries 尝试状态转换服务调用的次数
+ */
 void startup_lifecycle_nodes(
   const std::vector<std::string> & node_names,
   const std::chrono::seconds service_call_timeout = std::chrono::seconds::max(),
@@ -41,6 +49,11 @@ void startup_lifecycle_nodes(
 /// Transition the given lifecycle nodes to the ACTIVATED state in order.
 /**
  * \param[in] nodes A ':' seperated list of node names. eg. "/node1:/node2"
+ */
+
+/// 按顺序将给定的生命周期节点转换到激活状态。
+/**
+ * \param[in] nodes  A ':' 节点名称的冒号分隔列表。例如："/node1:/node2"
  */
 void startup_lifecycle_nodes(
   const std::string & nodes,
@@ -60,6 +73,14 @@ void startup_lifecycle_nodes(
  *            service call.
  * \param[in] retries The number of times to try a state transition service call
  */
+
+/// 按顺序将给定的生命周期节点转换到未配置状态UNCONFIGURED
+/** 目前，服务调用经常因未知原因而挂起。解决这个问题的唯一方法是设置服务调用的超时并重试。要使用此功能，
+ *  请估计节点在每个转换阶段应该花费的时间，并相应地设置超时时间。
+ * \param[in] node_names 要重置的完全限定的节点名称的向量。
+ * \param[in] service_call_timeout 等待服务调用的最大时间。
+ * \param[in] retries 尝试状态转换服务调用的次数
+ */
 void reset_lifecycle_nodes(
   const std::vector<std::string> & node_names,
   const std::chrono::seconds service_call_timeout = std::chrono::seconds::max(),
@@ -68,6 +89,11 @@ void reset_lifecycle_nodes(
 /// Transition the given lifecycle nodes to the UNCONFIGURED state in order.
 /**
  * \param[in] nodes A ':' seperated list of node names. eg. "/node1:/node2"
+ */
+
+/// 按顺序将给定的生命周期节点转换到未配置状态。
+/**
+ * \param[in] nodes 节点名称的冒号分隔列表。例如："/node1:/node2"
  */
 void reset_lifecycle_nodes(
   const std::string & nodes,

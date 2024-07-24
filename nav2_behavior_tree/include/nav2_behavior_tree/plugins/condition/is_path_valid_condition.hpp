@@ -30,6 +30,10 @@ namespace nav2_behavior_tree
  * @brief A BT::ConditionNode that returns SUCCESS when the IsPathValid
  * service returns true and FAILURE otherwise
  */
+
+/**
+ * @brief 一个 BT::ConditionNode，当 IsPathValid 服务返回 true 时返回 SUCCESS，否则返回 FAILURE
+ */
 class IsPathValidCondition : public BT::ConditionNode
 {
 public:

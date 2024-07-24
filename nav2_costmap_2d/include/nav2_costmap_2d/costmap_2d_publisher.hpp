@@ -58,7 +58,7 @@ namespace nav2_costmap_2d
 {
 /**
  * @class Costmap2DPublisher
- * @brief A tool to periodically publish visualization data from a Costmap2D
+ * @brief A tool to periodically publish visualization data from a Costmap2D。定期发布 Costmap2D 可视化数据的工具
  */
 class Costmap2DPublisher
 {
@@ -108,7 +108,7 @@ public:
    */
   void on_cleanup() {}
 
-  /** @brief Include the given bounds in the changed-rectangle. */
+  /** @brief Include the given bounds in the changed-rectangle. 将给定的边界包含在更改的矩形中。*/
   void updateBounds(unsigned int x0, unsigned int xn, unsigned int y0, unsigned int yn)
   {
     x0_ = std::min(x0, x0_);

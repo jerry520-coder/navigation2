@@ -53,7 +53,7 @@ class LayeredCostmap;
 
 /**
  * @class Layer
- * @brief Abstract class for layered costmap plugin implementations
+ * @brief Abstract class for layered costmap plugin implementations。用于分层代价地图插件实现的抽象类
  */
 class Layer
 {
@@ -68,7 +68,7 @@ public:
   virtual ~Layer() {}
 
   /**
-   * @brief Initialization process of layer on startup
+   * @brief Initialization process of layer on startup（启动）
    */
   void initialize(
     LayeredCostmap * parent,
@@ -76,8 +76,11 @@ public:
     tf2_ros::Buffer * tf,
     const nav2_util::LifecycleNode::WeakPtr & node,
     rclcpp::CallbackGroup::SharedPtr callback_group);
+
+
   /** @brief Stop publishers. */
   virtual void deactivate() {}
+
   /** @brief Restart publishers if they've been stopped. */
   virtual void activate() {}
   /**
@@ -97,6 +100,13 @@ public:
    * For more details, see "Layered Costmaps for Context-Sensitive Navigation",
    * by Lu et. Al, IROS 2014.
    */
+
+  /**
+   * @brief LayeredCostmap 调用此函数来询问插件需要更新代价地图的多少部分。
+   * 每个图层都可以增加此边界的大小。
+   * @note 有关更多详细信息，请参阅 "Layered Costmaps for Context-Sensitive Navigation"，
+   * 作者：Lu 等人，IROS 2014。
+  */
   virtual void updateBounds(
     double robot_x, double robot_y, double robot_yaw, double * min_x,
     double * min_y,
@@ -111,13 +121,18 @@ public:
     Costmap2D & master_grid,
     int min_i, int min_j, int max_i, int max_j) = 0;
 
-  /** @brief Implement this to make this layer match the size of the parent costmap. */
+  /** @brief Implement this to make this layer match the size of the parent costmap. 执行此操作可使该图层与父成本计算图的大小相匹配*/
   virtual void matchSize() {}
 
   /** @brief LayeredCostmap calls this whenever the footprint there
    * changes (via LayeredCostmap::setFootprint()).  Override to be
-   * notified of changes to the robot's footprint. */
+   * notified of changes to the robot's footprint. 
+   * 
+   * @note 当足迹发生变化时（通过 LayeredCostmap::setFootprint()），LayeredCostmap 会调用此方法。
+  * 重写此方法以便在机器人的足迹发生变化时得到通知。
+   * */
   virtual void onFootprintChanged() {}
+
   /** @brief Get the name of the costmap layer */
   std::string getName() const
   {
@@ -134,6 +149,15 @@ public:
    *        variable current_.
    * @return Whether the data in the layer is up to date.
    */
+
+  /**
+ * @brief 确保层中的所有数据都是最新的。
+ *        如果层不是最新的，那么使用这层的数据进行规划可能是不安全的，
+ *        规划器可能需要知道这一点。
+ *
+ *        层的当前状态应该由受保护的变量 current_ 管理。
+ * @return 层中的数据是否是最新的。
+ */
   bool isCurrent() const
   {
     return current_;
@@ -152,12 +176,15 @@ public:
   void declareParameter(
     const std::string & param_name,
     const rclcpp::ParameterValue & value);
+
   /** @brief Convenience functions for declaring ROS parameters */
   void declareParameter(
     const std::string & param_name,
     const rclcpp::ParameterType & param_type);
+
   /** @brief Convenience functions for declaring ROS parameters */
   bool hasParameter(const std::string & param_name);
+  
   /** @brief Convenience functions for declaring ROS parameters */
   std::string getFullName(const std::string & param_name);
 
@@ -171,15 +198,15 @@ protected:
   rclcpp::Logger logger_{rclcpp::get_logger("nav2_costmap_2d")};
 
   /** @brief This is called at the end of initialize().  Override to
-   * implement subclass-specific initialization.
+   * implement subclass-specific initialization.  在 initialize() 结束时调用。Override实现特定子类的初始化。
    *
-   * tf_, name_, and layered_costmap_ will all be set already when this is called.
+   * tf_, name_, and layered_costmap_ will all be set already when this is called. tf_、name_和layered_costmap_在调用时都已设置。
    */
   virtual void onInitialize() {}
 
   bool current_;
-  // Currently this var is managed by subclasses.
-  // TODO(bpwilcox): make this managed by this class and/or container class.
+  // Currently this var is managed by subclasses. 当前这个变量由子类管理。
+  // TODO(bpwilcox): make this managed by this class and/or container class. 让这个变量由本类和/或容器类管理。
   bool enabled_;
 
   // Names of the parameters declared on the ROS node

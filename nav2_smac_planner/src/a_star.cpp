@@ -63,18 +63,22 @@ void AStarAlgorithm<NodeT>::initialize(
   const float & lookup_table_size,
   const unsigned int & dim_3_size)
 {
-  _traverse_unknown = allow_unknown;
-  _max_iterations = max_iterations;
-  _max_on_approach_iterations = max_on_approach_iterations;
-  _max_planning_time = max_planning_time;
-  NodeT::precomputeDistanceHeuristic(lookup_table_size, _motion_model, dim_3_size, _search_info);
-  _dim3_size = dim_3_size;
+  _traverse_unknown = allow_unknown;  // 设置是否允许穿越未知区域
+  _max_iterations = max_iterations;  // 设置最大迭代次数
+  _max_on_approach_iterations = max_on_approach_iterations;  // 设置接近目标时的最大迭代次数
+  _max_planning_time = max_planning_time;  // 设置最大规划时间
+  // 调用 NodeT 类型的静态方法 precomputeDistanceHeuristic，预计算距离启发式
+  NodeT::precomputeDistanceHeuristic(lookup_table_size, _motion_model, dim_3_size, _search_info); //static 函数
+  _dim3_size = dim_3_size;  // 设置第三维度的大小
+
+  // 创建一个 AnalyticExpansion 对象，用于处理 A* 算法的分析扩展部分
   _expander = std::make_unique<AnalyticExpansion<NodeT>>(
     _motion_model, _search_info, _traverse_unknown, _dim3_size);
 }
 
+//模版特化
 template<>
-void AStarAlgorithm<Node2D>::initialize(
+void AStarAlgorithm<Node2D>::initialize( 
   const bool & allow_unknown,
   int & max_iterations,
   const int & max_on_approach_iterations,
@@ -88,7 +92,7 @@ void AStarAlgorithm<Node2D>::initialize(
   _max_planning_time = max_planning_time;
 
   if (dim_3_size != 1) {
-    throw std::runtime_error("Node type Node2D cannot be given non-1 dim 3 quantization.");
+    throw std::runtime_error("Node type Node2D cannot be given non-1 dim 3 quantization."); //节点类型 Node2D 不能进行非 1 dim 3 量化。代表z轴的意思
   }
   _dim3_size = dim_3_size;
   _expander = std::make_unique<AnalyticExpansion<Node2D>>(
@@ -98,18 +102,26 @@ void AStarAlgorithm<Node2D>::initialize(
 template<typename NodeT>
 void AStarAlgorithm<NodeT>::setCollisionChecker(GridCollisionChecker * collision_checker)
 {
-  _collision_checker = collision_checker;
-  _costmap = collision_checker->getCostmap();
+  _collision_checker = collision_checker;  // 存储提供的碰撞检查器对象的引用
+  _costmap = collision_checker->getCostmap();  // 从碰撞检查器获取成本地图的引用
+
+  // 获取成本地图的尺寸（X和Y方向的单元格数量）
   unsigned int x_size = _costmap->getSizeInCellsX();
   unsigned int y_size = _costmap->getSizeInCellsY();
 
+  // 清除当前图的数据，为新数据做准备
   clearGraph();
 
+  // 如果当前图的尺寸与成本地图的尺寸不匹配，则更新尺寸并重新初始化运动模型
   if (getSizeX() != x_size || getSizeY() != y_size) {
-    _x_size = x_size;
-    _y_size = y_size;
+    _x_size = x_size;  // 更新X方向的尺寸
+    _y_size = y_size;  // 更新Y方向的尺寸
+
+    // 调用 NodeT 类的静态方法来初始化运动模型，这通常涉及到根据新尺寸计算节点间的可能连接或成本
     NodeT::initMotionModel(_motion_model, _x_size, _y_size, _dim3_size, _search_info);
   }
+
+  // 将新的碰撞检查器设置给扩展器对象
   _expander->setCollisionChecker(collision_checker);
 }
 
@@ -117,11 +129,18 @@ template<typename NodeT>
 typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::addToGraph(
   const unsigned int & index)
 {
+   // 使用_graph查找index对应的节点
   auto iter = _graph.find(index);
+   // 如果找到该节点，则返回该节点的引用
   if (iter != _graph.end()) {
     return &(iter->second);
   }
 
+// 如果没有找到该节点，则使用emplace方法向图中添加一个新的节点
+  // emplace用于在_map_中插入一个新的键值对，避免不必要的复制
+  // 第一个参数是键（index），第二个参数是新建的NodeT对象，使用index作为构造函数参数
+  // 返回值是指向新插入元素的引用
+  // 由于返回的是pair类型，我们只关心.second，即NodeT对象
   return &(_graph.emplace(index, NodeT(index)).first->second);
 }
 
@@ -167,54 +186,67 @@ void AStarAlgorithm<Node2D>::setGoal(
 
 template<typename NodeT>
 void AStarAlgorithm<NodeT>::setGoal(
-  const unsigned int & mx,
-  const unsigned int & my,
-  const unsigned int & dim_3)
+  const unsigned int & mx,  // x坐标索引
+  const unsigned int & my,  // y坐标索引
+  const unsigned int & dim_3)  // 第三维的索引（例如高度或时间戳）
 {
+  // 根据提供的坐标索引计算目标点在图中的索引，并将其添加到图中
   _goal = addToGraph(NodeT::getIndex(mx, my, dim_3));
 
+  // 创建一个包含目标点坐标的NodeT类型的坐标结构
   typename NodeT::Coordinates goal_coords(
-    static_cast<float>(mx),
-    static_cast<float>(my),
-    static_cast<float>(dim_3));
+    static_cast<float>(mx),  // 将x坐标转换为浮点数
+    static_cast<float>(my),  // 将y坐标转换为浮点数
+    static_cast<float>(dim_3));  // 将第三维的索引转换为浮点数
 
+  // 如果没有缓存障碍物启发式值，或者当前目标坐标与之前的目标坐标不同，则重置障碍物启发式值
   if (!_search_info.cache_obstacle_heuristic || goal_coords != _goal_coordinates) {
     if (!_start) {
+      // 如果起点未设置，则在设置目标之前抛出运行时错误
       throw std::runtime_error("Start must be set before goal.");
     }
 
+    // 重置障碍物启发式值，基于起点和目标点的坐标
     NodeT::resetObstacleHeuristic(_costmap, _start->pose.x, _start->pose.y, mx, my);
   }
 
+  // 更新目标点坐标的缓存
   _goal_coordinates = goal_coords;
+
+  // 设置目标点的位置
   _goal->setPose(_goal_coordinates);
 }
 
 template<typename NodeT>
 bool AStarAlgorithm<NodeT>::areInputsValid()
 {
-  // Check if graph was filled in
+  // 检查图是否已填充
   if (_graph.empty()) {
+    // 如果图为空，则抛出运行时错误
     throw std::runtime_error("Failed to compute path, no costmap given.");
   }
 
-  // Check if points were filled in
+  // 检查起点和终点是否已填充
   if (!_start || !_goal) {
+    // 如果起点或终点未定义，则抛出运行时错误
     throw std::runtime_error("Failed to compute path, no valid start or goal given.");
   }
 
-  // Check if ending point is valid
+  // 检查终点是否有效
   if (getToleranceHeuristic() < 0.001 &&
-    !_goal->isNodeValid(_traverse_unknown, _collision_checker))
+      !_goal->isNodeValid(_traverse_unknown, _collision_checker))
   {
+    // 如果终点在没有容忍度的情况下被占据，则抛出运行时错误
     throw std::runtime_error("Failed to compute path, goal is occupied with no tolerance.");
   }
 
-  // Check if starting point is valid
+  // 检查起点是否有效
   if (!_start->isNodeValid(_traverse_unknown, _collision_checker)) {
+    // 如果起点位于致命空间，则抛出运行时错误，因为无法创建可行的规划
     throw std::runtime_error("Starting point in lethal space! Cannot create feasible plan.");
   }
 
+  // 如果所有输入都有效，则返回true
   return true;
 }
 
@@ -223,32 +255,34 @@ bool AStarAlgorithm<NodeT>::createPath(
   CoordinateVector & path, int & iterations,
   const float & tolerance)
 {
+  // 获取算法开始时间
   steady_clock::time_point start_time = steady_clock::now();
-  _tolerance = tolerance;
-  _best_heuristic_node = {std::numeric_limits<float>::max(), 0};
-  clearQueue();
+  _tolerance = tolerance; // 设置容忍度，用于判断何时停止算法
+  _best_heuristic_node = {std::numeric_limits<float>::max(), 0}; // 初始化最优启发式节点
+  clearQueue(); // 清空优先队列
 
+  // 验证输入参数是否有效
   if (!areInputsValid()) {
     return false;
   }
 
-  // 0) Add starting point to the open set
+  // 0) 将起点加入开放集 the open set
   addNode(0.0, getStart());
-  getStart()->setAccumulatedCost(0.0);
+  getStart()->setAccumulatedCost(0.0); // 设置起点的累积成本为 0
 
-  // Optimization: preallocate all variables
-  NodePtr current_node = nullptr;
-  NodePtr neighbor = nullptr;
-  NodePtr expansion_result = nullptr;
-  float g_cost = 0.0;
-  NodeVector neighbors;
-  int approach_iterations = 0;
-  NeighborIterator neighbor_iterator;
-  int analytic_iterations = 0;
-  int closest_distance = std::numeric_limits<int>::max();
+  // Optimization：预分配所有变量
+  NodePtr current_node = nullptr; // 当前节点
+  NodePtr neighbor = nullptr; // 邻居节点
+  NodePtr expansion_result = nullptr; // 扩展结果
+  float g_cost = 0.0; // G成本（从起点到当前节点的成本）
+  NodeVector neighbors; // 邻居节点集合
+  int approach_iterations = 0; // 接近迭代次数
+  NeighborIterator neighbor_iterator; // 邻居迭代器
+  int analytic_iterations = 0; // 分析迭代次数
+  int closest_distance = std::numeric_limits<int>::max(); // 最近距离
 
-  // Given an index, return a node ptr reference if its collision-free and valid
-  const unsigned int max_index = getSizeX() * getSizeY() * getSizeDim3();
+  // 用于根据索引，返回有效且无碰撞的节点指针
+  const unsigned int max_index = getSizeX() * getSizeY() * getSizeDim3(); // 计算最大索引
   NodeGetter neighborGetter =
     [&, this](const unsigned int & index, NodePtr & neighbor_rtn) -> bool
     {
@@ -260,8 +294,9 @@ bool AStarAlgorithm<NodeT>::createPath(
       return true;
     };
 
+  // 主循环：直到达到最大迭代次数或队列为空
   while (iterations < getMaxIterations() && !_queue.empty()) {
-    // Check for planning timeout only on every Nth iteration
+    // 每 N 次迭代检查一次规划超时
     if (iterations % _timing_interval == 0) {
       std::chrono::duration<double> planning_duration =
         std::chrono::duration_cast<std::chrono::duration<double>>(steady_clock::now() - start_time);
@@ -270,21 +305,21 @@ bool AStarAlgorithm<NodeT>::createPath(
       }
     }
 
-    // 1) Pick Nbest from O s.t. min(f(Nbest)), remove from queue
+    // 1) 从开放集中取出成本最低的节点，移除队列。Pick Nbest from O s.t. min(f(Nbest)), remove from queue
     current_node = getNextNode();
 
-    // We allow for nodes to be queued multiple times in case
-    // shorter paths result in it, but we can visit only once
+    // 如果节点已访问，则跳过
+    // 我们允许节点被多次加入队列以应对路径长度减少的情况，但每个节点只能被访问一次
     if (current_node->wasVisited()) {
       continue;
     }
 
-    iterations++;
+    iterations++; // 迭代计数
 
-    // 2) Mark Nbest as visited
+    // 2) 标记为已访问。Mark Nbest as visited
     current_node->visited();
 
-    // 2.1) Use an analytic expansion (if available) to generate a path
+    // 2.1) 如果可用，使用分析扩展生成路径。Use an analytic expansion (if available) to generate a path
     expansion_result = nullptr;
     expansion_result = _expander->tryAnalyticExpansion(
       current_node, getGoal(), neighborGetter, analytic_iterations, closest_distance);
@@ -292,18 +327,19 @@ bool AStarAlgorithm<NodeT>::createPath(
       current_node = expansion_result;
     }
 
-    // 3) Check if we're at the goal, backtrace if required
+    // 3) 检查是否达到目标节点，如果需要则回溯路径。Check if we're at the goal, backtrace if required
     if (isGoal(current_node)) {
       return current_node->backtracePath(path);
     } else if (_best_heuristic_node.first < getToleranceHeuristic()) {
-      // Optimization: Let us find when in tolerance and refine within reason
+      // 如果在容忍度范围内找到更好的节点，则继续查找直到达到接近迭代的最大次数
+      // Optimization：当节点在容忍度范围内时进行查找，并在合理的范围内进行精细化处理
       approach_iterations++;
       if (approach_iterations >= getOnApproachMaxIterations()) {
         return _graph.at(_best_heuristic_node.second).backtracePath(path);
       }
     }
 
-    // 4) Expand neighbors of Nbest not visited
+    // 4) 扩展当前节点的未访问邻居节点。Expand neighbors of Nbest not visited
     neighbors.clear();
     current_node->getNeighbors(neighborGetter, _collision_checker, _traverse_unknown, neighbors);
 
@@ -312,22 +348,24 @@ bool AStarAlgorithm<NodeT>::createPath(
     {
       neighbor = *neighbor_iterator;
 
-      // 4.1) Compute the cost to go to this node
+      // 4.1) 计算到该邻居节点的成本。Compute the cost to go to this node
       g_cost = current_node->getAccumulatedCost() + current_node->getTraversalCost(neighbor);
 
-      // 4.2) If this is a lower cost than prior, we set this as the new cost and new approach
+      // 4.2) 如果成本低于之前的成本，我们将其定为new cost and new approach。If this is a lower cost than prior, we set this as the new cost and new approach
       if (g_cost < neighbor->getAccumulatedCost()) {
         neighbor->setAccumulatedCost(g_cost);
         neighbor->parent = current_node;
 
-        // 4.3) Add to queue with heuristic cost
+        // 4.3) 根据启发式成本将节点加入队列。Add to queue with heuristic cost
         addNode(g_cost + getHeuristicCost(neighbor), neighbor);
       }
     }
   }
 
+  // 如果没有搜索选项，返回最接近目标的路径（如果在容忍度内）
   if (_best_heuristic_node.first < getToleranceHeuristic()) {
     // If we run out of serach options, return the path that is closest, if within tolerance.
+    // 如果我们耗尽了所有搜索选项，返回最接近的路径，前提是该路径在容忍度范围内。
     return _graph.at(_best_heuristic_node.second).backtracePath(path);
   }
 

@@ -47,6 +47,12 @@ namespace nav2_planner
  * @brief An action server implements the behavior tree's ComputePathToPose
  * interface and hosts various plugins of different algorithms to compute plans.
  */
+
+/**
+ * @class nav2_planner::PlannerServer
+ * @brief 一个实现行为树的 ComputePathToPose 接口的action server，
+ * 并托管各种不同算法的插件来计算路径规划。
+ */
 class PlannerServer : public nav2_util::LifecycleNode
 {
 public:
@@ -164,6 +170,14 @@ protected:
    * @param goal Goal pose to transform
    * @return bool If successful in transforming poses
    */
+
+  /**
+ * @brief 将起始点和目标点的姿态转换为成本图的全局框架，以便路径规划插件使用
+ * @param action_server 若需要则终止的动作服务器
+ * @param start 要转换的起始姿态
+ * @param goal 要转换的目标姿态
+ * @return bool 如果成功转换姿态则返回真
+ */
   template<typename T>
   bool transformPosesToGlobalFrame(
     std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
@@ -178,6 +192,15 @@ protected:
    * @param planner_id The planner ID used to generate the path
    * @return bool If path is valid
    */
+
+  /**
+ * @brief 验证路径是否包含有意义的路径
+ * @param action_server 若需要则终止的动作服务器
+ * @param goal 当前目标
+ * @param path 当前路径
+ * @param planner_id 用于生成路径的规划器ID
+ * @return bool 如果路径有效则返回真
+ */
   template<typename T>
   bool validatePath(
     std::unique_ptr<nav2_util::SimpleActionServer<T>> & action_server,
@@ -202,7 +225,7 @@ protected:
   void computePlanThroughPoses();
 
   /**
-   * @brief The service callback to determine if the path is still valid
+   * @brief The service callback to determine if the path is still valid。服务回调，用于确定路径是否仍然有效
    * @param request to the service
    * @param response from the service
    */

@@ -58,6 +58,14 @@ namespace nav2_core
  * (which are presumed to be in the same frame). It can also check the velocity, as some
  * applications require that robot be stopped to be considered as having reached the goal.
  */
+
+/**
+ * @class GoalChecker
+ * @brief 用于检查是否达到目标的函数对象
+ *
+ * 该类定义了一个插件接口，用于判断是否达到了目标状态。这主要包括检查两个姿态的相对位置
+ * （假设它们在同一坐标系中）。它还可以检查速度，因为某些应用要求机器人停止才能被认为是达到了目标。
+ */
 class GoalChecker
 {
 public:
@@ -69,6 +77,11 @@ public:
    * @brief Initialize any parameters from the NodeHandle
    * @param parent Node pointer for grabbing parameters
    */
+
+  /**
+ * @brief 从NodeHandle初始化任何参数
+ * @param parent 用于获取参数的节点指针
+ */
   virtual void initialize(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name,
@@ -83,6 +96,14 @@ public:
    * @param velocity The robot's current velocity
    * @return True if goal is reached
    */
+
+   /**
+ * @brief 检查目标是否应该被认为已达到
+ * @param query_pose 要检查的姿态
+ * @param goal_pose 用来对比的目标姿态
+ * @param velocity 机器人当前的速度
+ * @return 如果目标已达到，则返回True
+ */
   virtual bool isGoalReached(
     const geometry_msgs::msg::Pose & query_pose, const geometry_msgs::msg::Pose & goal_pose,
     const geometry_msgs::msg::Twist & velocity) = 0;
@@ -97,6 +118,17 @@ public:
    * @param vel_tolerance The tolerance used for checking velocity fields
    * @return True if the tolerances are valid to use
    */
+
+  /**
+ * @brief 获取用于目标检查的主要类型中可能的最大容忍度。
+ * 任何没有有效条目的字段都将被替换为 std::numeric_limits<double>::lowest()
+ * 来表示它不被测量。对于跨多个条目的容忍度
+ * （例如，XY容忍度），两个字段都将包含此值，因为假设另一个没有误差时，
+ * 每个独立字段可能具有的最大容忍度（例如，X和Y）。
+ * @param pose_tolerance 用于检查Pose字段的容忍度
+ * @param vel_tolerance 用于检查速度字段的容忍度
+ * @return 如果容忍度有效可用，则返回True
+ */
   virtual bool getTolerances(
     geometry_msgs::msg::Pose & pose_tolerance,
     geometry_msgs::msg::Twist & vel_tolerance) = 0;

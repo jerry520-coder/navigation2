@@ -27,6 +27,11 @@ namespace mppi::critics
  * @brief Critic objective function for aligning to path in cases of extreme misalignment
  * or turning
  */
+
+/**
+ * @class mppi::critics::ConstraintCritic
+ * @brief 在极端错位或转弯情况下，用于对齐路径的批评者目标函数
+ */
 class PathAngleCritic : public CriticFunction
 {
 public:
@@ -41,6 +46,13 @@ public:
    *
    * @param costs [out] add goal angle cost values to this tensor
    */
+
+  /**
+ * @brief 计算机器人在目标位姿上的朝向相关成本
+ * （仅在机器人接近current plan中的最后一个目标时考虑）
+ *
+ * @param costs [out] 将目标角度成本值添加到此张量中
+ */
   void score(CriticData & data) override;
 
 protected:

@@ -30,6 +30,11 @@ namespace nav2_costmap_2d
  * @brief Describes the type of pixel connectivity (is the way in which
  * pixels in image relate to their neighbors)
  */
+
+/**
+ * @enum nav2_costmap_2d::ConnectivityType
+ * @brief 描述像素连接类型（是指图像中像素与其邻居的关系方式）
+ */
 enum class ConnectivityType : int
 {
   /// neighbors pixels are connected horizontally and vertically
@@ -40,6 +45,10 @@ enum class ConnectivityType : int
 
 /**
  * @brief A memory buffer that can grow to an upper-bounded capacity
+ */
+
+/**
+ * @brief 一个可以增长到上限容量的内存缓冲区
  */
 class MemoryBuffer
 {

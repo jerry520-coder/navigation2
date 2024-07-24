@@ -67,41 +67,47 @@ void OdomSmoother::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
   std::lock_guard<std::mutex> lock(odom_mutex_);
 
-  // update cumulated odom only if history is not empty
+  // update cumulated odom only if history is not empty // 仅在历史记录不为空的情况下更新累积里程
   if (!odom_history_.empty()) {
-    // to store current time
+    // to store current time // 存储当前时间
     auto current_time = rclcpp::Time(msg->header.stamp);
 
-    // to store time of the first odom in history
+    // to store time of the first odom in history // 存储历史记录中最早的里程信息的时间
     auto front_time = rclcpp::Time(odom_history_.front().header.stamp);
 
-    // update cumulated odom when duration has exceeded and pop earliest msg
+    // update cumulated odom when duration has exceeded and pop earliest msg // 当时间间隔超过指定的历史记录时长时，更新累积里程并弹出最早的消息
     while (current_time - front_time > odom_history_duration_) {
-      const auto & odom = odom_history_.front();
+      const auto & odom = odom_history_.front();   // 获取历史记录中最早的里程信息
+
+       // 更新累积的线速度和角速度
       odom_cumulate_.twist.twist.linear.x -= odom.twist.twist.linear.x;
       odom_cumulate_.twist.twist.linear.y -= odom.twist.twist.linear.y;
       odom_cumulate_.twist.twist.linear.z -= odom.twist.twist.linear.z;
       odom_cumulate_.twist.twist.angular.x -= odom.twist.twist.angular.x;
       odom_cumulate_.twist.twist.angular.y -= odom.twist.twist.angular.y;
       odom_cumulate_.twist.twist.angular.z -= odom.twist.twist.angular.z;
-      odom_history_.pop_front();
 
+      odom_history_.pop_front(); // 从历史记录中移除最早的里程信息
+
+      // 如果历史记录为空，则跳出循环
       if (odom_history_.empty()) {
         break;
       }
 
-      // update with the timestamp of earliest odom message in history
+      // update with the timestamp of earliest odom message in history // 更新最早的里程信息的时间戳
       front_time = rclcpp::Time(odom_history_.front().header.stamp);
     }
   }
 
-  odom_history_.push_back(*msg);
+  odom_history_.push_back(*msg); // 将当前里程信息添加到历史记录中
   updateState();
 }
 
 void OdomSmoother::updateState()
 {
-  const auto & odom = odom_history_.back();
+  const auto & odom = odom_history_.back(); // 获取历史记录中的最新里程信息
+
+   // 更新累积的线速度和角速度
   odom_cumulate_.twist.twist.linear.x += odom.twist.twist.linear.x;
   odom_cumulate_.twist.twist.linear.y += odom.twist.twist.linear.y;
   odom_cumulate_.twist.twist.linear.z += odom.twist.twist.linear.z;
@@ -109,7 +115,10 @@ void OdomSmoother::updateState()
   odom_cumulate_.twist.twist.angular.y += odom.twist.twist.angular.y;
   odom_cumulate_.twist.twist.angular.z += odom.twist.twist.angular.z;
 
+ // 将最新里程信息的头信息复制到 vel_smooth_
   vel_smooth_.header = odom.header;
+
+    // 计算并更新平滑后的线速度和角速度
   vel_smooth_.twist.linear.x = odom_cumulate_.twist.twist.linear.x / odom_history_.size();
   vel_smooth_.twist.linear.y = odom_cumulate_.twist.twist.linear.y / odom_history_.size();
   vel_smooth_.twist.linear.z = odom_cumulate_.twist.twist.linear.z / odom_history_.size();

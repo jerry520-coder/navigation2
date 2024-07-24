@@ -70,7 +70,7 @@ public:
   ~Node2D();
 
   /**
-   * @brief operator== for comparisons
+   * @brief operator== for comparisons 比较
    * @param Node2D right hand side node reference
    * @return If cell indicies are equal
    */
@@ -138,7 +138,7 @@ public:
   }
 
   /**
-   * @brief Gets if cell is currently queued in search
+   * @brief Gets if cell is currently queued in search。获取单元格当前是否在搜索队列中
    * @param If cell was queued
    */
   inline bool & isQueued()

@@ -76,59 +76,77 @@ LifecycleManagerClient::reset(const std::chrono::nanoseconds timeout)
 SystemStatus
 LifecycleManagerClient::is_active(const std::chrono::nanoseconds timeout)
 {
+  // 创建请求和响应对象
   auto request = std::make_shared<std_srvs::srv::Trigger::Request>();
   auto response = std::make_shared<std_srvs::srv::Trigger::Response>();
 
+  // 在日志中记录调试信息，表示正在等待服务
   RCLCPP_DEBUG(
     node_->get_logger(), "Waiting for the %s service...",
     active_service_name_.c_str());
 
+  // 等待服务变得可用，如果1秒内服务不可用，返回超时状态
   if (!is_active_client_->wait_for_service(std::chrono::seconds(1))) {
     return SystemStatus::TIMEOUT;
   }
 
+  // 服务可用后，记录调试信息，表示正在发送请求
   RCLCPP_DEBUG(
     node_->get_logger(), "Sending %s request",
     active_service_name_.c_str());
 
+  // 尝试调用服务并获取响应
   try {
     response = is_active_client_->invoke(request, timeout);
   } catch (std::runtime_error &) {
+    // 如果调用过程中出现异常，返回超时状态
     return SystemStatus::TIMEOUT;
   }
 
+  // 根据响应的成功状态，返回相应的系统状态
   if (response->success) {
-    return SystemStatus::ACTIVE;
+    return SystemStatus::ACTIVE;  // 服务激活
   } else {
-    return SystemStatus::INACTIVE;
+    return SystemStatus::INACTIVE;  // 服务未激活
   }
 }
 
 bool
 LifecycleManagerClient::callService(uint8_t command, const std::chrono::nanoseconds timeout)
 {
+  // 创建一个新的请求，并设置请求中的命令
   auto request = std::make_shared<ManageLifecycleNodes::Request>();
   request->command = command;
 
+  // 记录调试信息，表明正在等待特定服务
   RCLCPP_DEBUG(
     node_->get_logger(), "Waiting for the %s service...",
     manage_service_name_.c_str());
 
+  // 循环等待服务变得可用，直到超时
   while (!manager_client_->wait_for_service(timeout)) {
+    // 如果ROS节点不再正常运行，则记录错误并返回false
     if (!rclcpp::ok()) {
       RCLCPP_ERROR(node_->get_logger(), "Client interrupted while waiting for service to appear");
       return false;
     }
+    // 如果服务尚未出现，则继续记录调试信息并等待
     RCLCPP_DEBUG(node_->get_logger(), "Waiting for service to appear...");
   }
 
+  // 服务可用后，记录调试信息，表示正在发送请求
   RCLCPP_DEBUG(
     node_->get_logger(), "Sending %s request",
     manage_service_name_.c_str());
+
+  // 尝试调用服务并获取结果
   try {
+    // 使用invoke方法发送请求，并传递超时时间
     auto future_result = manager_client_->invoke(request, timeout);
+    // 返回请求结果的成功状态
     return future_result->success;
   } catch (std::runtime_error &) {
+    // 如果在调用服务时抛出运行时错误，捕获异常并返回false
     return false;
   }
 }

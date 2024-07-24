@@ -54,6 +54,12 @@ namespace nav2_costmap_2d
  * dynamically adjust speed based on pose in map to slow in dangerous
  * areas. Done via absolute speed setting or percentage of maximum speed
  */
+
+/**
+ * @class BinaryFilter
+ * @brief 读取速度限制掩码，使机器人能够根据地图中的姿态动态调整速度，在危险区域减速。
+ * 通过绝对速度设置或最大速度的百分比来实现
+ */
 class BinaryFilter : public CostmapFilter
 {
 public:

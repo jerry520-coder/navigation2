@@ -34,11 +34,22 @@ namespace nav2_lifecycle_manager
  * @enum nav2_lifecycle_manager::SystemStatus
  * @brief Enum class representing the status of the system.
  */
+
+/**
+ * @enum nav2_lifecycle_manager::SystemStatus
+ * @brief 枚举类，表示系统的状态。
+ */
 enum class SystemStatus {ACTIVE, INACTIVE, TIMEOUT};
 /**
  * @class nav2_lifecycle_manager::LifeCycleMangerClient
  * @brief The LifecycleManagerClient sends requests to the LifecycleManager to
  * control the lifecycle state of the navigation modules.
+ */
+
+/**
+ * @class nav2_lifecycle_manager::LifeCycleMangerClient
+ * @brief LifeCycleMangerClient发送请求给LifecycleManager，
+ * 控制导航模块的生命周期状态。
  */
 class LifecycleManagerClient
 {
@@ -57,6 +68,12 @@ public:
    * @brief Make start up service call
    * @return true or false
    */
+
+  // Nav2生命周期管理器的客户端接口
+/**
+ * @brief 发起启动服务调用
+ * @return true 或 false
+ */
   bool startup(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
   /**
    * @brief Make shutdown service call
@@ -84,13 +101,20 @@ public:
    */
   SystemStatus is_active(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1));
 
-  // A couple convenience methods to facilitate scripting tests
+  // A couple convenience methods to facilitate scripting tests// 一些便利方法以便于脚本测试
   /**
    * @brief Set initial pose with covariance
    * @param x X position
    * @param y Y position
    * @param theta orientation
    */
+
+  /**
+ * @brief 设置具有协方差的初始姿态
+ * @param x X位置
+ * @param y Y位置
+ * @param theta 方向
+ */
   void set_initial_pose(double x, double y, double theta);
   /**
    * @brief Send goal pose to NavigationToPose action server
@@ -99,6 +123,14 @@ public:
    * @param theta orientation
    * @return true or false
    */
+
+  /**
+ * @brief 向NavigationToPose行动服务器发送目标姿态
+ * @param x X位置
+ * @param y Y位置
+ * @param theta 方向
+ * @return true 或 false
+ */
   bool navigate_to_pose(double x, double y, double theta);
 
 protected:

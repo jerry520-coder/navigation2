@@ -54,7 +54,7 @@ namespace nav2_costmap_2d
 
 /**
  * @class StaticLayer
- * @brief Takes in a map generated from SLAM to add costs to costmap
+ * @brief 接收 SLAM 生成的地图，将成本添加到成本地图中。Takes in a map generated from SLAM to add costs to costmap
  */
 class StaticLayer : public CostmapLayer
 {
@@ -140,16 +140,29 @@ protected:
    * map along with its size will determine what parts of the costmap's
    * static map are overwritten.
    */
+
+  /**
+   * @brief 从地图服务器更新成本地图的回调函数
+   * @param new_map 要放入成本地图的地图。新的地图的原点以及其大小将决定成本地图的哪些部分的静态地图将被覆盖。
+   */
   void incomingMap(const nav_msgs::msg::OccupancyGrid::SharedPtr new_map);
   /**
    * @brief Callback to update the costmap's map from the map_server (or SLAM)
    * with an update in a particular area of the map
+   */
+
+  /**
+   * @brief 回调函数，用于从map_server（或SLAM）更新成本地图的地图，特别是地图中特定区域的更新
    */
   void incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr update);
 
   /**
    * @brief Interpret the value in the static map given on the topic to
    * convert into costs for the costmap to utilize
+   */
+
+  /**
+   * @brief 解释在topic上给出的静态地图中的值，将其转换为成本地图可以使用的成本
    */
   unsigned char interpretValue(unsigned char value);
 

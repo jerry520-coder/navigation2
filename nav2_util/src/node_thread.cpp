@@ -23,12 +23,13 @@ NodeThread::NodeThread(rclcpp::node_interfaces::NodeBaseInterface::SharedPtr nod
 : node_(node_base)
 {
   executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
+   // 创建一个独特的线程来处理节点的回调
   thread_ = std::make_unique<std::thread>(
     [&]()
     {
-      executor_->add_node(node_);
-      executor_->spin();
-      executor_->remove_node(node_);
+      executor_->add_node(node_);// 向执行器添加节点
+      executor_->spin();// 在当前线程中启动执行器的事件循环，处理所有回调
+      executor_->remove_node(node_); // 事件循环结束后，从执行器中移除节点
     });
 }
 

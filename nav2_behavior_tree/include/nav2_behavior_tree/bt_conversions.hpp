@@ -29,6 +29,8 @@ namespace BT
 // The follow templates are required when using these types as parameters
 // in our BT XML files. They parse the strings in the XML into their corresponding
 // data type.
+// 当我们在BT XML文件中将这些类型用作参数时，需要这些模板。
+// 它们将XML中的字符串解析为它们对应的数据类型。
 
 /**
  * @brief Parse XML string to geometry_msgs::msg::Point

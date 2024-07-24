@@ -44,6 +44,14 @@ namespace nav2_costmap_2d
  *
  * On error, error_return is set and the return value could be
  * anything, like part of a successful parse. */
+
+
+
+/** @brief 从字符串解析一个浮点数的二维向量。
+ * @param error_return 如果没有错误，error_return 设置为 ""。如果有错误，error_return 将描述错误。
+ * 语法是 [[1.0, 2.0], [3.3, 4.4, 5.5], ...]
+ *
+ * 在出错的情况下，error_return 被设置，并且返回值可能是任何值，比如成功解析的一部分。 */
 std::vector<std::vector<float>> parseVVF(const std::string & input, std::string & error_return);
 
 }  // end namespace nav2_costmap_2d

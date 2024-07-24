@@ -56,6 +56,16 @@ public:
    * @param decel maximum deceleration
    * @return Scale factor, eta
    */
+
+  /**
+ * @brief 计算缩放因子 eta，将轴缩放到加速范围内
+ * @param v_curr 当前速度
+ * @param v_cmd 指令速度
+ * @param accel 最大加速度
+ * @param decel 最大减速度
+ * @return 缩放因子 eta
+ * @note 函数通过比较当前速度和指令速度的大小及符号，确定是加速还是减速，然后根据需要的速度变化和最大/最小速度分量计算缩放因子。如果速度变化超过允许范围，则返回相应的缩放因子，否则返回-1.0，表示无需缩放。
+ */
   double findEtaConstraint(
     const double v_curr, const double v_cmd,
     const double accel, const double decel);
@@ -69,6 +79,16 @@ public:
    * @param eta Scale factor
    * @return Velocity command
    */
+
+  /**
+ * @brief 应用加速度和缩放因子的约束
+ * @param v_curr 当前速度
+ * @param v_cmd 指令速度
+ * @param accel 最大加速度
+ * @param decel 最大减速度
+ * @param eta 缩放因子
+ * @return 速度指令
+ */
   double applyConstraints(
     const double v_curr, const double v_cmd,
     const double accel, const double decel, const double eta);

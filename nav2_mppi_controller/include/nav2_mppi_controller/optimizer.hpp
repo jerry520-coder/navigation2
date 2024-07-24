@@ -200,7 +200,7 @@ protected:
     const xt::xtensor<float, 2> & state) const;
 
   /**
-   * @brief Update control sequence with state controls weighted by costs
+   * @brief 使用 softmax 函数，以成本加权的状态控制来更新控制序列。Update control sequence with state controls weighted by costs
    * using softmax function
    */
   void updateControlSequence();
@@ -220,7 +220,7 @@ protected:
   bool isHolonomic() const;
 
   /**
-   * @brief Using control frequence and time step size, determine if trajectory
+   * @brief 根据控制频率和时间步长大小，确定是否应该使用轨迹偏移来填充下一个周期的初始状态。Using control frequence and time step size, determine if trajectory
    * offset should be used to populate initial state of the next cycle
    */
   void setOffset(double controller_frequency);
@@ -229,6 +229,11 @@ protected:
    * @brief Perform fallback behavior to try to recover from a set of trajectories in collision
    * @param fail Whether the system failed to recover from
    */
+
+  /**
+  * @brief 执行回退行为，尝试从一组发生碰撞的轨迹中恢复
+  * @param fail 系统是否未能从中恢复
+  */
   bool fallback(bool fail);
 
 protected:
@@ -252,6 +257,7 @@ protected:
   models::Path path_;
   xt::xtensor<float, 1> costs_;
 
+//state/trajectories/path/costs/模型时间间隔/失败标志/目标检查器/运动模型/可选的路径点有效性/可选的最远到达的路径点。
   CriticData critics_data_ =
   {state_, generated_trajectories_, path_, costs_, settings_.model_dt, false, nullptr, nullptr,
     std::nullopt, std::nullopt};  /// Caution, keep references

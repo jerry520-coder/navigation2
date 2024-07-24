@@ -30,6 +30,10 @@ namespace nav2_behavior_tree
  * @brief A BT::ConditionNode that returns SUCCESS if there is a valid transform
  * between two specified frames and FAILURE otherwise
  */
+
+/**
+ * @brief 一个 BT::ConditionNode，如果两个指定的帧之间存在有效的变换，则返回 SUCCESS，否则返回 FAILURE
+ */
 class TransformAvailableCondition : public BT::ConditionNode
 {
 public:

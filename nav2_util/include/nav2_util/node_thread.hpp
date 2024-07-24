@@ -25,6 +25,11 @@ namespace nav2_util
  * @class nav2_util::NodeThread
  * @brief A background thread to process node/executor callbacks
  */
+
+/**
+ * @class nav2_util::NodeThread
+ * @brief 一个后台线程，用于处理节点/执行器的回调
+ */
 class NodeThread
 {
 public:
@@ -32,18 +37,32 @@ public:
    * @brief A background thread to process node callbacks constructor
    * @param node_base Interface to Node to spin in thread
    */
+  /**
+ * @brief 一个用于处理节点回调的后台线程构造函数
+ * @param node_base 用于在线程中旋转的节点接口
+ */
   explicit NodeThread(rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base);
 
   /**
    * @brief A background thread to process executor's callbacks constructor
    * @param executor Interface to executor to spin in thread
    */
+
+  /**
+ * @brief 一个用于处理执行器回调的后台线程构造函数
+ * @param executor 用于在线程中旋转的执行器接口
+ */
   explicit NodeThread(rclcpp::executors::SingleThreadedExecutor::SharedPtr executor);
 
   /**
    * @brief A background thread to process node callbacks constructor
    * @param node Node pointer to spin in thread
    */
+
+  /**
+ * @brief 一个用于处理节点回调的后台线程构造函数
+ * @param node 用于在线程中旋转的节点指针
+ */
   template<typename NodeT>
   explicit NodeThread(NodeT node)
   : NodeThread(node->get_node_base_interface())

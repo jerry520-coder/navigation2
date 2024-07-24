@@ -39,7 +39,7 @@ namespace nav2_smac_planner
 
 /**
  * @class nav2_smac_planner::NodeBasic
- * @brief NodeBasic implementation for priority queue insertion
+ * @brief NodeBasic implementation for priority queue insertion。优先队列插入的 NodeBasic 实现
  */
 template<typename NodeT>
 class NodeBasic
@@ -47,7 +47,7 @@ class NodeBasic
 public:
   /**
    * @brief A constructor for nav2_smac_planner::NodeBasic
-   * @param index The index of this node for self-reference
+   * @param index The index of this node for self-reference。该节点的索引，用于自引用
    */
   explicit NodeBasic(const unsigned int index)
   : index(index),
@@ -60,6 +60,11 @@ public:
    * cached in the queue for NodeT.
    * @param node NodeT ptr to populate metadata into NodeBasic
    */
+
+  /**
+ * @brief 采用一个 NodeBasic， 并用 NodeT 的queue中缓存的任何必要状态填充它。
+ * @param node NodeT ptr to populate metadata into NodeBasic。用于向 NodeBasic 填充元数据的 NodeT 指针。
+ */
   void populateSearchNode(NodeT * & node);
 
   /**
@@ -68,6 +73,11 @@ public:
    * @param node Search node (basic) object to initialize internal node
    * with state
    */
+
+  /**
+ * @brief 采用一个 NodeBasic，并用 NodeTs 的queue中缓存的任何必要状态填充它。
+ * @param node Search node (basic) object to initialize internal node with state。用于用状态初始化内部节点的搜索节点（基本）对象。
+ */
   void processSearchNode();
 
   typename NodeT::Coordinates pose;  // Used by NodeHybrid and NodeLattice

@@ -35,18 +35,24 @@ void GoalAngleCritic::initialize()
 
 void GoalAngleCritic::score(CriticData & data)
 {
+  // 如果未启用或者不在目标位置阈值内，则直接返回
   if (!enabled_ || !utils::withinPositionGoalTolerance(
       threshold_to_consider_, data.state.pose.pose, data.path))
   {
     return;
   }
 
-  const auto goal_idx = data.path.x.shape(0) - 1;
+  //获取路径的最后一个索引和目标航向角
+  //path为截取的局部路径 
+  const auto goal_idx = data.path.x.shape(0) - 1;  //使用 x.shape(0) 获取路径的长度，减去 1，得到最后一个点的索引 goal_idx。
   const float goal_yaw = data.path.yaws(goal_idx);
 
+  // 计算角度差值并添加到总成本中
   data.costs += xt::pow(
     xt::mean(xt::abs(utils::shortest_angular_distance(data.trajectories.yaws, goal_yaw)), {1}) *
     weight_, power_);
+
+  //xt::mean 计算每一行的均值
 }
 
 }  // namespace mppi::critics

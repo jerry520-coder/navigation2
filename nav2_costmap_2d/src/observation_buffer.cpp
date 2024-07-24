@@ -172,12 +172,15 @@ void ObservationBuffer::bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud)
 }
 
 // returns a copy of the observations
+// 返回观测数据的副本
 void ObservationBuffer::getObservations(std::vector<Observation> & observations)
 {
   // first... let's make sure that we don't have any stale observations
+  // 首先...确保我们没有过时的观测数据
   purgeStaleObservations();
 
   // now we'll just copy the observations for the caller
+  // 现在我们将观测数据的副本复制给调用者
   std::list<Observation>::iterator obs_it;
   for (obs_it = observation_list_.begin(); obs_it != observation_list_.end(); ++obs_it) {
     observations.push_back(*obs_it);

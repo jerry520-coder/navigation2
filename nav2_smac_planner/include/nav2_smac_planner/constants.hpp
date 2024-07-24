@@ -60,9 +60,9 @@ inline MotionModel fromString(const std::string & n)
 }
 
 const float UNKNOWN = 255.0;
-const float OCCUPIED = 254.0;
-const float INSCRIBED = 253.0;
-const float MAX_NON_OBSTACLE = 252.0;
+const float OCCUPIED = 254.0; //被占据的空间的值
+const float INSCRIBED = 253.0; //inscribed  临界区域的值，此区域紧靠障碍物但未直接被占据。
+const float MAX_NON_OBSTACLE = 252.0; //max non obstacle 最大非障碍物值，用于区分障碍物和非障碍物的阈值。
 const float FREE = 0;
 
 }  // namespace nav2_smac_planner

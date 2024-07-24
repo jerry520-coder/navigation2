@@ -33,6 +33,12 @@ namespace mppi::critics
  * between path-tracking and dynamic obstacle avoidance capabilities as desirable for a
  * particular application
  */
+
+/**
+ * @class mppi::critics::ConstraintCritic
+ * @brief 用于避开障碍物的评价器目标函数，允许偏离规划路径。
+ * 这对于与 PathAlign 调节以达到一种在特定应用中平衡路径跟踪和动态障碍物避免能力非常重要。
+ */
 class ObstaclesCritic : public CriticFunction
 {
 public:
@@ -79,7 +85,14 @@ protected:
     * @return double circumscribed cost, any higher than this and need to do full footprint collision checking
     * since some element of the robot could be in collision
     */
+
+  /**
+   * @brief 寻找充分膨胀衰减函数的最小成本，其中机器人可能在任何方向上与障碍物发生碰撞
+   * @param costmap Costmap2DROS，用于获取最小内切成本（例如膨胀层文档中的 128）
+   * @return double 外接圆（circumscribed）成本，高于此值需要进行完整的足迹碰撞检查，因为机器人的某些部分可能发生碰撞
+   */
   float findCircumscribedCost(std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap);
+
 
 protected:
   nav2_costmap_2d::FootprintCollisionChecker<nav2_costmap_2d::Costmap2D *>

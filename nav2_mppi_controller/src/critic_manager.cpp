@@ -41,20 +41,31 @@ void CriticManager::getParams()
 
 void CriticManager::loadCritics()
 {
+  // 如果 loader_ 没有被初始化，就创建一个新的插件加载器
   if (!loader_) {
     loader_ = std::make_unique<pluginlib::ClassLoader<critics::CriticFunction>>(
       "nav2_mppi_controller", "mppi::critics::CriticFunction");
   }
 
+  // 清空当前的批评家列表
   critics_.clear();
+
+  // 遍历每个批评家的名称
   for (auto name : critic_names_) {
+    // 获取完整的批评家名称
     std::string fullname = getFullName(name);
+    
+    // 创建一个新的批评家实例并添加到批评家列表中
     auto instance = std::unique_ptr<critics::CriticFunction>(
       loader_->createUnmanagedInstance(fullname));
     critics_.push_back(std::move(instance));
+    
+    // 调用批评家的配置函数
     critics_.back()->on_configure(
       parent_, name_, name_ + "." + name, costmap_ros_,
       parameters_handler_);
+    
+    // 输出日志信息，表示批评家已加载
     RCLCPP_INFO(logger_, "Critic loaded : %s", fullname.c_str());
   }
 }

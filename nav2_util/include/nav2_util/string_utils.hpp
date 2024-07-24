@@ -28,6 +28,12 @@ typedef std::vector<std::string> Tokens;
  * @param in String of topic in
  * @return String out without slash
 */
+
+/*
+ * @brief 从topic名称中移除前导斜杠
+ * @param in 输入的topic字符串
+ * @return 返回没有前导斜杠的字符串
+*/
 std::string strip_leading_slash(const std::string & in);
 
 ///
@@ -36,6 +42,13 @@ std::string strip_leading_slash(const std::string & in);
  * @param in String to split
  * @param Delimiter criteria
  * @return Tokens
+*/
+
+/*
+ * @brief 在分隔符处分割字符串
+ * @param in 要分割的字符串
+ * @param Delimiter 分隔符
+ * @return 分割后的字符串数组（Tokens）
 */
 Tokens split(const std::string & tokenstring, char delimiter);
 

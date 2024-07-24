@@ -31,6 +31,13 @@ namespace mppi::critics
  * A higher weight here with an offset > 1 will accelerate the samples to full speed
  * faster and push the follow point further ahead, creating some shortcutting.
  */
+
+/**
+ * @class mppi::critics::ConstraintCritic
+ * @brief 用于近似跟随路径的批评者目标函数
+ * 允许在遇到动态障碍物时偏离路径。如果需要，路径对齐（Path Align）会将轨迹与路径更精确地对齐。
+ * 如果weight较高且offset > 1，则会加快样本达到全速的速度，并将follow point推向前方，从而形成一些捷径。
+ */
 class PathFollowCritic : public CriticFunction
 {
 public:

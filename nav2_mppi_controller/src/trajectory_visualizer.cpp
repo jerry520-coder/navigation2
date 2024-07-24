@@ -86,26 +86,37 @@ void TrajectoryVisualizer::add(
 void TrajectoryVisualizer::add(
   const models::Trajectories & trajectories, const std::string & marker_namespace)
 {
+  // 获取轨迹数组的形状信息
   auto & shape = trajectories.x.shape();
+  // 获取数组第二维的大小
   const float shape_1 = static_cast<float>(shape[1]);
+  // 预留足够的空间来存储所有的轨迹点的 Marker
   points_->markers.reserve(floor(shape[0] / trajectory_step_) * floor(shape[1] * time_step_));
 
+  // 遍历轨迹数组
   for (size_t i = 0; i < shape[0]; i += trajectory_step_) {
     for (size_t j = 0; j < shape[1]; j += time_step_) {
+      // 计算当前轨迹点在第二维上的比例，用于颜色计算
       const float j_flt = static_cast<float>(j);
       float blue_component = 1.0f - j_flt / shape_1;
       float green_component = j_flt / shape_1;
 
+      // 创建当前轨迹点的 Pose
       auto pose = utils::createPose(trajectories.x(i, j), trajectories.y(i, j), 0.03);
+      // 创建 Marker 的缩放信息
       auto scale = utils::createScale(0.03, 0.03, 0.03);
+      // 创建 Marker 的颜色信息，根据 j 的值计算出蓝色和绿色的分量
       auto color = utils::createColor(0, green_component, blue_component, 1);
+      // 创建一个 Marker 对象，用于可视化当前轨迹点
       auto marker = utils::createMarker(
         marker_id_++, pose, scale, color, frame_id_, marker_namespace);
 
+      // 将当前轨迹点的 Marker 添加到 Marker 数组中
       points_->markers.push_back(marker);
     }
   }
 }
+
 
 void TrajectoryVisualizer::reset()
 {

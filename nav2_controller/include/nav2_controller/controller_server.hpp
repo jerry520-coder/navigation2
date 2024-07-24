@@ -72,6 +72,15 @@ protected:
    * @throw pluginlib::PluginlibException When failed to initialize controller
    * plugin
    */
+
+  /**
+ * @brief 配置控制器参数和成员变量
+ *
+ * 配置控制器插件和代价地图；初始化里程计订阅者、速度发布者和跟随路径action server。
+ * @param state 生命周期节点的状态
+ * @return 成功或失败
+ * @throw pluginlib::PluginlibException 当初始化控制器插件失败时抛出
+ */
   nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Activates member variables
@@ -122,6 +131,15 @@ protected:
    * the specified rate till the goal is reached.
    * @throw nav2_core::PlannerException
    */
+
+  /**
+ * @brief FollowPath action server回调。处理action server更新，
+ * 并spins server旋转服务器直到达到目标
+ *
+ * 提供从action client接收到的给控制器的全局路径。使用控制器按指定频率计算
+ * 并发布机器人的Twist velocities，直到达到目标。
+ * @throw nav2_core::PlannerException
+ */
   void computeControl();
 
   /**
@@ -146,6 +164,11 @@ protected:
    * @brief Assigns path to controller
    * @param path Path received from action server
    */
+
+  /**
+   * @brief 分配路径给控制器
+   * @param path 从action server接收到的路径
+   */
   void setPlannerPath(const nav_msgs::msg::Path & path);
   /**
    * @brief Calculates velocity and publishes to "cmd_vel" topic
@@ -155,6 +178,10 @@ protected:
    * @brief Calls setPlannerPath method with an updated path received from
    * action server
    */
+
+  /**
+ * @brief 通过从action server接收到的更新后的路径来调用 setPlannerPath 方法
+ */
   void updateGlobalPath();
   /**
    * @brief Calls velocity publisher to publish the velocity on "cmd_vel" topic
@@ -193,13 +220,26 @@ protected:
    * @param Twist The current Twist from odometry
    * @return Twist Twist after thresholds applied
    */
+
+  /**
+   * @brief 获取经过阈值处理的Twist
+   * @param twist 从里程计获取的当前Twist
+   * @return Twist 应用阈值后的Twist
+   */
   nav_2d_msgs::msg::Twist2D getThresholdedTwist(const nav_2d_msgs::msg::Twist2D & twist)
   {
-    nav_2d_msgs::msg::Twist2D twist_thresh;
+    nav_2d_msgs::msg::Twist2D twist_thresh; // 定义一个新的Twist变量用于存储阈值处理后的速度
+
+    // 对x方向的速度应用阈值处理，如果速度小于min_x_velocity_threshold_，则将速度置为0
     twist_thresh.x = getThresholdedVelocity(twist.x, min_x_velocity_threshold_);
+
+    // 对y方向的速度应用阈值处理，如果速度小于min_y_velocity_threshold_，则将速度置为0
     twist_thresh.y = getThresholdedVelocity(twist.y, min_y_velocity_threshold_);
+
+    // 对角速度（theta）应用阈值处理，如果角速度小于min_theta_velocity_threshold_，则将角速度置为0
     twist_thresh.theta = getThresholdedVelocity(twist.theta, min_theta_velocity_threshold_);
-    return twist_thresh;
+
+    return twist_thresh; // 返回阈值处理后的Twist
   }
 
   /**

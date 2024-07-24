@@ -43,20 +43,21 @@
 namespace nav2_costmap_2d
 {
 
-/** Types of costmap filter */
-static constexpr uint8_t KEEPOUT_FILTER = 0;
-static constexpr uint8_t SPEED_FILTER_PERCENT = 1;
-static constexpr uint8_t SPEED_FILTER_ABSOLUTE = 2;
-static constexpr uint8_t BINARY_FILTER = 3;
+/** 成本图过滤器类型 */
+static constexpr uint8_t KEEPOUT_FILTER = 0; // 避障过滤器，用于标识应避免的区域
+static constexpr uint8_t SPEED_FILTER_PERCENT = 1; // 速度百分比过滤器，用于根据地图区域调整速度的百分比
+static constexpr uint8_t SPEED_FILTER_ABSOLUTE = 2; // 绝对速度过滤器，用于指定特定区域的具体速度限制
+static constexpr uint8_t BINARY_FILTER = 3; // 二进制过滤器，通常用于有无障碍的简单判断
 
-/** Default values for base and multiplier */
-static constexpr double BASE_DEFAULT = 0.0;
-static constexpr double MULTIPLIER_DEFAULT = 1.0;
+/** 基础值和乘数的默认值 */
+static constexpr double BASE_DEFAULT = 0.0; // 基础值默认为0.0，用于初始化或默认配置
+static constexpr double MULTIPLIER_DEFAULT = 1.0; // 乘数默认为1.0，表示默认不改变原有值
 
-/** Speed filter constants */
-static constexpr int8_t SPEED_MASK_UNKNOWN = -1;
-static constexpr int8_t SPEED_MASK_NO_LIMIT = 0;
-static constexpr double NO_SPEED_LIMIT = 0.0;
+/** 速度过滤器常量 */
+static constexpr int8_t SPEED_MASK_UNKNOWN = -1; // 表示速度限制未知
+static constexpr int8_t SPEED_MASK_NO_LIMIT = 0; // 表示无速度限制
+static constexpr double NO_SPEED_LIMIT = 0.0; // 用0.0表示没有速度限制
+
 
 }  // namespace nav2_costmap_2d
 

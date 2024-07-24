@@ -62,8 +62,8 @@ public:
   /**
    * @brief  Constructs an observation buffer
    * @param  topic_name The topic of the observations, used as an identifier for error and warning messages
-   * @param  observation_keep_time Defines the persistence of observations in seconds, 0 means only keep the latest
-   * @param  expected_update_rate How often this buffer is expected to be updated, 0 means there is no limit
+   * @param  observation_keep_time 以秒为单位定义观测数据的持久性，0 表示只保留最新的观测数据。Defines the persistence of observations in seconds, 0 means only keep the latest
+   * @param  expected_update_rate 该缓冲区的更新频率，0 表示没有限制。How often this buffer is expected to be updated, 0 means there is no limit
    * @param  min_obstacle_height The minimum height of a hitpoint to be considered legal
    * @param  max_obstacle_height The minimum height of a hitpoint to be considered legal
    * @param  obstacle_max_range The range to which the sensor should be trusted for inserting obstacles
@@ -75,6 +75,23 @@ public:
    * @param  sensor_frame The frame of the origin of the sensor, can be left blank to be read from the messages
    * @param  tf_tolerance The amount of time to wait for a transform to be available when setting a new global frame
    */
+
+  /**
+ * @brief 构造一个观测数据缓冲区
+ * @param topic_name 观测数据的主题，用作错误和警告消息的标识符
+ * @param observation_keep_time 以秒为单位定义观测数据的持久性，0 表示只保留最新的观测数据
+ * @param expected_update_rate 该缓冲区的预期更新频率，0 表示没有限制
+ * @param min_obstacle_height 被视为合法的击中点的最小高度
+ * @param max_obstacle_height 被视为合法的击中点的最大高度
+ * @param obstacle_max_range 传感器用于插入障碍物的信任范围的最大距离
+ * @param obstacle_min_range 传感器用于插入障碍物的信任范围的最小距离
+ * @param raytrace_max_range 传感器用于光线追踪以清除空间的信任范围的最大距离
+ * @param raytrace_min_range 传感器用于光线追踪以清除空间的信任范围的最小距离
+ * @param tf2_buffer 对 tf2 缓冲区的引用
+ * @param global_frame 将 PointCloud 转换为的坐标系
+ * @param sensor_frame 传感器原点的坐标系，可以留空以从消息中读取
+ * @param tf_tolerance 设置新的全局坐标系时等待变换可用的时间量
+ */
   ObservationBuffer(
     const nav2_util::LifecycleNode::WeakPtr & parent,
     std::string topic_name,
@@ -97,12 +114,23 @@ public:
    * <b>Note: The burden is on the user to make sure the transform is available... ie they should use a MessageNotifier</b>
    * @param  cloud The cloud to be buffered
    */
+
+  /**
+ * @brief 将 PointCloud 转换为全局坐标系并进行缓存
+ * <b>注意：用户有责任确保变换是可用的...即，他们应该使用一个 MessageNotifier</b>
+ * @param cloud 要进行缓存的点云数据
+ */
   void bufferCloud(const sensor_msgs::msg::PointCloud2 & cloud);
 
   /**
    * @brief  Pushes copies of all current observations onto the end of the vector passed in
    * @param  observations The vector to be filled
    */
+
+  /**
+ * @brief 将所有当前观测数据的副本推送到传入的向量的末尾
+ * @param observations 要填充的向量
+ */
   void getObservations(std::vector<Observation> & observations);
 
   /**

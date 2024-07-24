@@ -31,75 +31,90 @@ RecoveryNode::RecoveryNode(
 
 BT::NodeStatus RecoveryNode::tick()
 {
+  // 获取子节点的数量。
   const unsigned children_count = children_nodes_.size();
 
+  // 如果子节点数量不等于2，则抛出异常。RecoveryNode设计为必须有两个子节点。
   if (children_count != 2) {
     throw BT::BehaviorTreeException("Recovery Node '" + name() + "' must only have 2 children.");
   }
 
+  // 设置当前节点的状态为RUNNING，表示正在运行。
   setStatus(BT::NodeStatus::RUNNING);
 
+  // 当当前子节点索引小于子节点数量，并且重试次数不超过设定的最大重试次数时，循环执行。
   while (current_child_idx_ < children_count && retry_count_ <= number_of_retries_) {
+    // 获取当前子节点。
     TreeNode * child_node = children_nodes_[current_child_idx_];
+    // 执行当前子节点的tick函数，并获取其状态。
     const BT::NodeStatus child_status = child_node->executeTick();
 
+    // 如果当前是第一个子节点。
     if (current_child_idx_ == 0) {
       switch (child_status) {
+        // 如果子节点执行成功。
         case BT::NodeStatus::SUCCESS:
           {
-            // reset node and return success when first child returns success
+            // 重置节点状态并返回成功。
             halt();
             return BT::NodeStatus::SUCCESS;
           }
 
+        // 如果子节点执行失败。
         case BT::NodeStatus::FAILURE:
           {
+            // 如果重试次数小于最大重试次数。
             if (retry_count_ < number_of_retries_) {
-              // halt first child and tick second child in next iteration
+              // 停止第一个子节点，并在下一次迭代中执行第二个子节点。
               ControlNode::haltChild(0);
               current_child_idx_++;
               break;
             } else {
-              // reset node and return failure when max retries has been exceeded
+              // 如果达到最大重试次数，重置节点状态并返回失败。
               halt();
               return BT::NodeStatus::FAILURE;
             }
           }
 
+        // 如果子节点状态为运行中。
         case BT::NodeStatus::RUNNING:
           {
             return BT::NodeStatus::RUNNING;
           }
 
+        // 其他情况，抛出逻辑错误。
         default:
           {
             throw BT::LogicError("A child node must never return IDLE");
           }
       }  // end switch
-
-    } else if (current_child_idx_ == 1) {
+    } else if (current_child_idx_ == 1) { // 如果当前是第二个子节点。
       switch (child_status) {
+        // 如果子节点执行成功。
         case BT::NodeStatus::SUCCESS:
           {
-            // halt second child, increment recovery count, and tick first child in next iteration
+            // 停止第二个子节点，增加重试计数，下一次迭代中执行第一个子节点。
             ControlNode::haltChild(1);
             retry_count_++;
             current_child_idx_--;
           }
           break;
 
+        // 如果子节点执行失败。
         case BT::NodeStatus::FAILURE:
           {
-            // reset node and return failure if second child fails
+            // 重置节点状态并返回失败。
             halt();
             return BT::NodeStatus::FAILURE;
           }
 
+        // 如果子节点状态为运行中。
         case BT::NodeStatus::RUNNING:
           {
             return BT::NodeStatus::RUNNING;
           }
 
+        // 其他情况，抛出逻辑错误。
         default:
           {
             throw BT::LogicError("A child node must never return IDLE");
@@ -108,7 +123,7 @@ BT::NodeStatus RecoveryNode::tick()
     }
   }  // end while loop
 
-  // reset node and return failure
+  // 如果循环结束，表示重试次数超过最大限制，重置节点状态并返回失败。
   halt();
   return BT::NodeStatus::FAILURE;
 }

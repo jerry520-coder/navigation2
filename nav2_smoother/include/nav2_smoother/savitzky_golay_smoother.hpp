@@ -38,7 +38,7 @@ namespace nav2_smoother
 
 /**
  * @class nav2_smoother::SavitzkyGolaySmoother
- * @brief A path smoother implementation using Savitzky Golay filters
+ * @brief A path smoother implementation using Savitzky Golay filters。使用 Savitzky-Golay 滤波器的路径平滑实现。
  */
 class SavitzkyGolaySmoother : public nav2_core::Smoother
 {
@@ -81,6 +81,14 @@ public:
    * @param max_time Maximum duration smoothing should take
    * @return If smoothing was completed (true) or interrupted by time limit (false)
    */
+
+  /**
+ * @brief 平滑给定路径的方法
+ *
+ * @param path 输入输出参数，需要被平滑的路径
+ * @param max_time 平滑操作应当花费的最大持续时间
+ * @return 如果平滑完成则返回真（true），如果由于时间限制被中断则返回假（false）
+ */
   bool smooth(
     nav_msgs::msg::Path & path,
     const rclcpp::Duration & max_time) override;
@@ -94,6 +102,15 @@ protected:
    * @param max_time Maximum time to compute, stop early if over limit
    * @return If smoothing was successful
    */
+
+  /**
+ * @brief 平滑方法 - 在路径的一个段上进行平滑处理
+ * @param path 对路径的引用
+ * @param reversing_segment 如果这是一个反向段则返回
+ * @param costmap 指向最小代价地图的指针
+ * @param max_time 计算的最大时间，如果超过限制则提前停止
+ * @return 如果平滑成功则返回真
+ */
   bool smoothImpl(
     nav_msgs::msg::Path & path,
     bool & reversing_segment);

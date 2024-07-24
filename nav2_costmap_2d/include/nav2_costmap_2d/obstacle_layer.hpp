@@ -63,7 +63,7 @@ namespace nav2_costmap_2d
 
 /**
  * @class ObstacleLayer
- * @brief Takes in laser and pointcloud data to populate into 2D costmap
+ * @brief 接收激光和点云数据，将其填充到二维成本计算图中。Takes in laser and pointcloud data to populate into 2D costmap。
  */
 class ObstacleLayer : public CostmapLayer
 {
@@ -199,6 +199,15 @@ protected:
    * @param max_x
    * @param max_y
    */
+
+  /**
+ * @brief  根据一个观测数据清理自由空间
+ * @param clearing_observation 用于射线追踪的观测数据
+ * @param min_x 射线追踪清理后的最小X坐标
+ * @param min_y 射线追踪清理后的最小Y坐标
+ * @param max_x 射线追踪清理后的最大X坐标
+ * @param max_y 射线追踪清理后的最大Y坐标
+ */
   virtual void raytraceFreespace(
     const nav2_costmap_2d::Observation & clearing_observation,
     double * min_x, double * min_y,
@@ -208,6 +217,10 @@ protected:
   /**
    * @brief Process update costmap with raytracing the window bounds
    */
+
+  /**
+ * @brief 使用射线追踪窗口边界来处理更新代价地图
+ */
   void updateRaytraceBounds(
     double ox, double oy, double wx, double wy, double max_range, double min_range,
     double * min_x, double * min_y,
@@ -236,11 +249,11 @@ protected:
   observation_subscribers_;
   /// @brief Used to make sure that transforms are available for each sensor
   std::vector<std::shared_ptr<tf2_ros::MessageFilterBase>> observation_notifiers_;
-  /// @brief Used to store observations from various sensors
+  /// @brief 用于存储各种传感器的观测数据。Used to store observations from various sensors
   std::vector<std::shared_ptr<nav2_costmap_2d::ObservationBuffer>> observation_buffers_;
-  /// @brief Used to store observation buffers used for marking obstacles
+  /// @brief 用于存储用于标记障碍物的观测缓冲区。Used to store observation buffers used for marking obstacles
   std::vector<std::shared_ptr<nav2_costmap_2d::ObservationBuffer>> marking_buffers_;
-  /// @brief Used to store observation buffers used for clearing obstacles
+  /// @brief 用于存储用于清除障碍的观测缓冲区。Used to store observation buffers used for clearing obstacles
   std::vector<std::shared_ptr<nav2_costmap_2d::ObservationBuffer>> clearing_buffers_;
 
   /// @brief Dynamic parameters handler

@@ -39,10 +39,11 @@
 /** Provides a mapping for often used cost values */
 namespace nav2_costmap_2d
 {
-static constexpr unsigned char NO_INFORMATION = 255;
-static constexpr unsigned char LETHAL_OBSTACLE = 254;
-static constexpr unsigned char INSCRIBED_INFLATED_OBSTACLE = 253;
-static constexpr unsigned char MAX_NON_OBSTACLE = 252;
-static constexpr unsigned char FREE_SPACE = 0;
+// 通常是为了在编译时计算出一个常量，并且该常量在整个程序的生命周期内保持其值。constexpr 用于声明编译时常量，而 static 用于指定静态存储持续时间。
+static constexpr unsigned char NO_INFORMATION = 255;//代表无信息区域
+static constexpr unsigned char LETHAL_OBSTACLE = 254;//代表致命障碍
+static constexpr unsigned char INSCRIBED_INFLATED_OBSTACLE = 253;//代表膨胀障碍的内环。这通常用于机器人的路径规划，表示机器人的边缘如果触碰到该区域，可能会导致碰撞。实际上，这是一个安全缓冲区域，让机器人在保持距离的同时避开障碍。
+static constexpr unsigned char MAX_NON_OBSTACLE = 252;//最大非障碍值，用于表示此值以下（不包括该值）的所有值都是非障碍区域。这可能包括一些安全通过的低风险区域。
+static constexpr unsigned char FREE_SPACE = 0; //自由空间，即没有任何障碍的区域，机器人可以安全通过。
 }
 #endif  // NAV2_COSTMAP_2D__COST_VALUES_HPP_

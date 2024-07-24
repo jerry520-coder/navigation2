@@ -34,18 +34,18 @@ typedef std::pair<float, unsigned int> NodeHeuristicPair;
  */
 struct SearchInfo
 {
-  float minimum_turning_radius;
-  float non_straight_penalty;
-  float change_penalty;
-  float reverse_penalty;
-  float cost_penalty;
-  float retrospective_penalty;
-  float rotation_penalty;
-  float analytic_expansion_ratio;
-  float analytic_expansion_max_length;
-  std::string lattice_filepath;
-  bool cache_obstacle_heuristic;
-  bool allow_reverse_expansion;
+  float minimum_turning_radius; // 最小转弯半径
+  float non_straight_penalty; // 非直行惩罚
+  float change_penalty; // 转向惩罚
+  float reverse_penalty; // 倒车惩罚
+  float cost_penalty; // 成本惩罚，增加路径的总成本，用于避免高成本区域
+  float retrospective_penalty; // 回顾惩罚，对之前选择的路径施加惩罚，促使探索新路径
+  float rotation_penalty; // 旋转惩罚
+  float analytic_expansion_ratio; // 分析扩展比率，控制在搜索过程中分析扩展的使用频率
+  float analytic_expansion_max_length; // 分析扩展最大长度，限制分析扩展的最大距离
+  std::string lattice_filepath; // lattice文件路径，用于存储或读取搜索格子的数据
+  bool cache_obstacle_heuristic; // 是否缓存障碍启发式信息，有助于加速搜索过程
+  bool allow_reverse_expansion; // 是否允许反向扩展
 };
 
 /**

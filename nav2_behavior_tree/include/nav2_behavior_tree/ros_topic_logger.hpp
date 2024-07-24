@@ -56,6 +56,7 @@ public:
    * @param node Node that changed status
    * @param prev_status Previous status of the node
    * @param status Current status of the node
+   * @note 专门用于处理特定的事件，即行为树节点的状态变化。
    */
   void callback(
     BT::Duration timestamp,
@@ -63,22 +64,30 @@ public:
     BT::NodeStatus prev_status,
     BT::NodeStatus status) override
   {
-    nav2_msgs::msg::BehaviorTreeStatusChange event;
-
+      nav2_msgs::msg::BehaviorTreeStatusChange event; // 创建一个消息对象，用于记录状态变化。
+      
     // BT timestamps are a duration since the epoch. Need to convert to a time_point
     // before converting to a msg.
-    event.timestamp = tf2_ros::toMsg(tf2::TimePoint(timestamp));
-    event.node_name = node.name();
-    event.previous_status = toStr(prev_status, false);
-    event.current_status = toStr(status, false);
-    event_log_.push_back(std::move(event));
+      // BT时间戳是自纪元以来的持续时间，需要转换为时间点（time_point），然后再转换为消息格式。
+      event.timestamp = tf2_ros::toMsg(tf2::TimePoint(timestamp));
+      // 记录节点名称。
+      event.node_name = node.name();
+      // 记录节点之前的状态，将枚举值转换为字符串形式。
+      event.previous_status = toStr(prev_status, false);
+      // 记录节点当前的状态，同样将枚举值转换为字符串形式。
+      event.current_status = toStr(status, false);
+      // 将这个状态变化事件添加到事件日志中。
+      event_log_.push_back(std::move(event));
 
-    RCLCPP_DEBUG(
-      logger_, "[%.3f]: %25s %s -> %s",
-      std::chrono::duration<double>(timestamp).count(),
-      node.name().c_str(),
-      toStr(prev_status, true).c_str(),
-      toStr(status, true).c_str() );
+      // 使用RCLCPP_DEBUG宏记录一条调试信息到ROS 2节点的日志中。
+      // 这条信息包含时间戳（转换为秒，并保留三位小数）、节点名称、之前的状态以及当前的状态。
+      // 注意这里使用了toStr函数的另一个版本，传入true以获取更详细的状态字符串。
+      RCLCPP_DEBUG(
+        logger_, "[%.3f]: %25s %s -> %s",
+        std::chrono::duration<double>(timestamp).count(), // 将时间戳转换为秒。
+        node.name().c_str(),                              // 节点名称。
+        toStr(prev_status, true).c_str(),                 // 之前的状态（详细字符串形式）。
+        toStr(status, true).c_str() );                    // 当前的状态（详细字符串形式）。
   }
 
   /**

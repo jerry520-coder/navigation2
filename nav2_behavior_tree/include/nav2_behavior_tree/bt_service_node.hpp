@@ -27,11 +27,16 @@
 namespace nav2_behavior_tree
 {
 
-using namespace std::chrono_literals;  // NOLINT
+using namespace std::chrono_literals;  // NOLINT 可以直接使用如10ms、1s、2h等字面量来创建对应的std::chrono持续时间对象，而不需要使用较为繁琐的构造函数或工厂函数。
 
 /**
  * @brief Abstract class representing a service based BT node
  * @tparam ServiceT Type of service
+ */
+
+/**
+ * @brief 代表基于服务的行为树节点的抽象类
+ * @tparam ServiceT 服务的类型
  */
 template<class ServiceT>
 class BtServiceNode : public BT::ActionNodeBase
@@ -43,54 +48,67 @@ public:
    * @param conf BT node configuration
    * @param service_name Optional service name this node creates a client for instead of from input port
    */
-  BtServiceNode(
-    const std::string & service_node_name,
-    const BT::NodeConfiguration & conf,
-    const std::string & service_name = "")
-  : BT::ActionNodeBase(service_node_name, conf), service_name_(service_name), service_node_name_(
-      service_node_name)
-  {
-    node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
-    callback_group_ = node_->create_callback_group(
-      rclcpp::CallbackGroupType::MutuallyExclusive,
-      false);
-    callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
+/**
+ * @brief 一个nav2_behavior_tree::BtServiceNode构造函数
+ * @param service_node_name 行为树节点名称
+ * @param conf 行为树节点配置
+ * @param service_name 可选，此节点创建客户端以调用的服务名称，而不是从输入端口获取
+ */
+BtServiceNode(
+  const std::string & service_node_name,
+  const BT::NodeConfiguration & conf,
+  const std::string & service_name = "")
+: BT::ActionNodeBase(service_node_name, conf), service_name_(service_name), service_node_name_(
+    service_node_name)
+{
+  // 从黑板中获取ROS节点的共享指针
+  node_ = config().blackboard->template get<rclcpp::Node::SharedPtr>("node");
+  // 创建回调组
+  callback_group_ = node_->create_callback_group(
+    rclcpp::CallbackGroupType::MutuallyExclusive,
+    false);
+  // 将回调组添加到执行器
+  callback_group_executor_.add_callback_group(callback_group_, node_->get_node_base_interface());
 
-    // Get the required items from the blackboard
-    bt_loop_duration_ =
-      config().blackboard->template get<std::chrono::milliseconds>("bt_loop_duration");
-    server_timeout_ =
-      config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
-    getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
+  // 从黑板中获取所需项
+  bt_loop_duration_ =
+    config().blackboard->template get<std::chrono::milliseconds>("bt_loop_duration");
+  server_timeout_ =
+    config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
+  // 获取输入端口的“server_timeout”，如果有的话
+  getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
 
-    // Now that we have node_ to use, create the service client for this BT service
-    getInput("service_name", service_name_);
-    service_client_ = node_->create_client<ServiceT>(
-      service_name_,
-      rclcpp::ServicesQoS().get_rmw_qos_profile(),
-      callback_group_);
+  // 现在我们有了ROS节点，可以创建这个行为树服务的服务客户端了
+  // 获取输入端口的“service_name”，如果有的话
+  getInput("service_name", service_name_);
+  service_client_ = node_->create_client<ServiceT>(
+    service_name_,
+    rclcpp::ServicesQoS().get_rmw_qos_profile(),
+    callback_group_);
 
-    // Make a request for the service without parameter
-    request_ = std::make_shared<typename ServiceT::Request>();
+  // 创建一个空的服务请求
+  request_ = std::make_shared<typename ServiceT::Request>();
 
-    // Make sure the server is actually there before continuing
-    RCLCPP_DEBUG(
-      node_->get_logger(), "Waiting for \"%s\" service",
-      service_name_.c_str());
-    if (!service_client_->wait_for_service(1s)) {
-      RCLCPP_ERROR(
-        node_->get_logger(), "\"%s\" service server not available after waiting for 1 s",
-        service_node_name.c_str());
-      throw std::runtime_error(
-              std::string(
-                "Service server %s not available",
-                service_node_name.c_str()));
-    }
-
-    RCLCPP_DEBUG(
-      node_->get_logger(), "\"%s\" BtServiceNode initialized",
-      service_node_name_.c_str());
+  // 确保服务端确实存在
+  RCLCPP_DEBUG(
+    node_->get_logger(), "Waiting for \"%s\" service",
+    service_name_.c_str());
+  // 等待服务可用，超时时间为1秒
+  if (!service_client_->wait_for_service(1s)) {
+    RCLCPP_ERROR(
+      node_->get_logger(), "\"%s\" service server not available after waiting for 1 s",
+      service_node_name.c_str());
+    // 如果服务不可用，抛出运行时错误
+    throw std::runtime_error(
+            std::string(
+              "Service server %s not available",
+              service_node_name.c_str()));
   }
+
+  RCLCPP_DEBUG(
+    node_->get_logger(), "\"%s\" BtServiceNode initialized",
+    service_node_name_.c_str());
+}
 
   BtServiceNode() = delete;
 
@@ -104,6 +122,12 @@ public:
    * @param addition Additional ports to add to BT port list
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
+
+  /**
+ * @brief 任何接受参数的BtServiceNode的子类都必须提供一个providedPorts方法，并在其中调用providedBasicPorts。
+ * @param addition 需要添加到行为树端口列表中的附加端口
+ * @return BT::PortsList 包含基本端口以及节点特定的端口
+ */
   static BT::PortsList providedBasicPorts(BT::PortsList addition)
   {
     BT::PortsList basic = {
@@ -127,27 +151,42 @@ public:
   /**
    * @brief The main override required by a BT service
    * @return BT::NodeStatus Status of tick execution
+   * @note  这里，它被重写（override），以实现特定的功能。
    */
-  BT::NodeStatus tick() override
-  {
-    if (!request_sent_) {
-      // reset the flag to send the request or not,
-      // allowing the user the option to set it in on_tick
-      should_send_request_ = true;
+BT::NodeStatus tick() override
+{
+  // 检查是否已经发送了请求。如果没有发送请求，则执行请求发送的逻辑。
+  if (!request_sent_) {
+    // 首先，重置should_send_request_标志，允许在on_tick用户定义的回调中设置它。
+    // 这个标志用来决定是否应该发送请求。
+    should_send_request_ = true;
 
-      // user defined callback, may modify "should_send_request_".
-      on_tick();
+    // 调用用户定义的on_tick回调函数。这个回调函数可以修改should_send_request_的值，
+    // 从而影响是否发送请求的决定。
+    on_tick();
 
-      if (!should_send_request_) {
-        return BT::NodeStatus::FAILURE;
-      }
-
-      future_result_ = service_client_->async_send_request(request_).share();
-      sent_time_ = node_->now();
-      request_sent_ = true;
+    // 检查回调函数执行后，should_send_request_的值。如果为false，则表示不应该发送请求，
+    // 直接返回FAILURE状态。
+    if (!should_send_request_) {
+      return BT::NodeStatus::FAILURE;
     }
-    return check_future();
+
+    // 如果决定发送请求，则使用service_client_发送异步请求。这里的request_是之前准备好的请求数据。
+    // async_send_request方法将发送请求，并返回一个future对象，这个对象代表了请求结果的一个未来状态。
+    // 使用share方法使得这个future对象可以被安全地复制和共享。
+    future_result_ = service_client_->async_send_request(request_).share();
+    
+    // 记录发送请求的时间。
+    sent_time_ = node_->now();
+    
+    // 设置request_sent_标志为true，表示请求已经发送。
+    request_sent_ = true;
   }
+  
+  // 调用check_future方法检查future_result_的状态，根据请求的处理结果返回相应的节点状态。
+  // 这个方法的具体实现在这段代码中没有给出，它应该是用来检查异步请求结果的状态，并据此返回节点的状态。
+  return check_future();
+}
 
   /**
    * @brief The other (optional) override required by a BT service.
@@ -172,6 +211,13 @@ public:
    * @param response can be used to get the result of the service call in the BT Node.
    * @return BT::NodeStatus Returns SUCCESS by default, user may override to return another value
    */
+
+  /**
+ * @brief 在服务成功完成后执行一些用户定义的操作的函数。
+ * 可以在黑板上设置一个值。
+ * @param response 可用于在行为树节点中获取服务调用的结果。
+ * @return BT::NodeStatus 默认返回SUCCESS，用户可以重写以返回其他值
+ */
   virtual BT::NodeStatus on_completion(std::shared_ptr<typename ServiceT::Response>/*response*/)
   {
     return BT::NodeStatus::SUCCESS;
@@ -181,6 +227,11 @@ public:
    * @brief Check the future and decide the status of BT
    * @return BT::NodeStatus SUCCESS if future complete before timeout, FAILURE otherwise
    */
+
+  /**
+ * @brief 检查future并决定行为树的状态
+ * @return BT::NodeStatus 如果future在超时前完成则返回SUCCESS，否则返回FAILURE
+ */
   virtual BT::NodeStatus check_future()
   {
     auto elapsed = (node_->now() - sent_time_).template to_chrono<std::chrono::milliseconds>();

@@ -50,20 +50,32 @@ public:
    * @brief With input velocities, find the vehicle's output velocities
    * @param state Contains control velocities to use to populate vehicle velocities
    */
-  virtual void predict(models::State & state)
-  {
-    using namespace xt::placeholders;  // NOLINT
-    xt::noalias(xt::view(state.vx, xt::all(), xt::range(1, _))) =
-      xt::view(state.cvx, xt::all(), xt::range(0, -1));
 
-    xt::noalias(xt::view(state.wz, xt::all(), xt::range(1, _))) =
-      xt::view(state.cwz, xt::all(), xt::range(0, -1));
+  /**
+ * @brief 根据输入速度，预测车辆的输出速度
+ * @param state 包含控制速度的状态对象，用于生成车辆的输出速度
+ */
+virtual void predict(models::State & state)
+{
+  using namespace xt::placeholders;  // NOLINT
 
-    if (isHolonomic()) {
-      xt::noalias(xt::view(state.vy, xt::all(), xt::range(1, _))) =
-        xt::view(state.cvy, xt::all(), xt::range(0, -1));
-    }
+  // 使用输入速度来预测输出速度
+  // state.vx 是车辆的 x 方向速度
+  // state.cvx 是输入的控制速度
+  // 从第二列开始，将输入的控制速度赋值给车辆的 x 方向速度
+  xt::noalias(xt::view(state.vx, xt::all(), xt::range(1, _))) =
+    xt::view(state.cvx, xt::all(), xt::range(0, -1)); //将 state.cvx 的第一列（即 xt::range(0, -1)，表示从第 0 列到倒数第二列）赋值给 state.vx 的第二列（即 xt::range(1, _)，表示从第 1 列到最后一列）
+
+  // 类似地，将输入的控制角速度赋值给车辆的 z 方向速度
+  xt::noalias(xt::view(state.wz, xt::all(), xt::range(1, _))) =
+    xt::view(state.cwz, xt::all(), xt::range(0, -1));
+
+  // 如果是全向机器人，将输入的控制速度赋值给车辆的 y 方向速度
+  if (isHolonomic()) {
+    xt::noalias(xt::view(state.vy, xt::all(), xt::range(1, _))) =
+      xt::view(state.cvy, xt::all(), xt::range(0, -1));
   }
+}
 
   /**
    * @brief Whether the motion model is holonomic, using Y axis
@@ -72,7 +84,7 @@ public:
   virtual bool isHolonomic() = 0;
 
   /**
-   * @brief Apply hard vehicle constraints to a control sequence
+   * @brief 对控制序列应用硬车约束。Apply hard vehicle constraints to a control sequence
    * @param control_sequence Control sequence to apply constraints to
    */
   virtual void applyConstraints(models::ControlSequence & /*control_sequence*/) {}
@@ -109,10 +121,16 @@ public:
    */
   void applyConstraints(models::ControlSequence & control_sequence) override
   {
-    auto & vx = control_sequence.vx;
-    auto & wz = control_sequence.wz;
+    auto & vx = control_sequence.vx;  // 获取控制序列的 x 方向速度
+    auto & wz = control_sequence.wz;  // 获取控制序列的 z 方向速度
 
-    auto view = xt::masked_view(wz, xt::fabs(vx) / xt::fabs(wz) < min_turning_r_);
+    // 使用 masked_view 创建掩码视图，将满足约束条件的部分取出
+    // fabs(vx) / fabs(wz) < min_turning_r_ 是一个布尔掩码
+    auto view = xt::masked_view(wz, xt::fabs(vx) / xt::fabs(wz) < min_turning_r_); //根据转弯半径的约束条件从控制序列的 wz 数组中选择满足条件的部分元素，这些被选择的元素会在接下来的操作中被修改为符合约束条件的新值
+
+    // 将满足约束条件的部分用新的值替换
+    // 新的值为 sign(wz) * vx / min_turning_r_
+    // 即符号相同，按比例缩小
     view = xt::sign(wz) * vx / min_turning_r_;
   }
 

@@ -53,7 +53,7 @@
 namespace nav2_costmap_2d
 {
 
-// convenient for storing x/y point pairs
+// convenient for storing x/y point pairs。方便存储 x/y 点对
 struct MapLocation
 {
   unsigned int x;
@@ -62,11 +62,11 @@ struct MapLocation
 
 /**
  * @class Costmap2D
- * @brief A 2D costmap provides a mapping between points in the world and their associated "costs".
+ * @brief A 2D costmap provides a mapping between points in the world and their associated "costs".。2D costmap提供了world上各点与其相关 "costs "之间的映射。
  */
 class Costmap2D
 {
-  friend class CostmapTester;  // Need this for gtest to work correctly
+  friend class CostmapTester;  // Need this for gtest to work correctly。需要这样才能使 gtest 正常工作
 
 public:
   /**
@@ -115,15 +115,15 @@ public:
     double win_size_y);
 
   /**
-   * @brief Copies the (x0,y0)..(xn,yn) window from source costmap into a current costmap
+   * @brief Copies the (x0,y0)..(xn,yn) window from source costmap into a current costmap。从源成本地图中复制(x0, y0)..(xn, yn)窗口到当前成本地图
      @param source Source costmap where the window will be copied from
      @param sx0 Lower x-boundary of the source window to copy, in cells
      @param sy0 Lower y-boundary of the source window to copy, in cells
      @param sxn Upper x-boundary of the source window to copy, in cells
      @param syn Upper y-boundary of the source window to copy, in cells
-     @param dx0 Lower x-boundary of the destination window to copy, in cells
-     @param dx0 Lower y-boundary of the destination window to copy, in cells
-     @returns true if copy was succeeded or false in negative case
+     @param dx0 Lower x-boundary of the destination window to copy, in cells。目标窗口的下限x边界，单位为单元格
+     @param dx0 Lower y-boundary of the destination window to copy, in cells。目标窗口的下限y边界，单位为单元格
+     @returns true if copy was succeeded or false in negative case。如果复制成功返回true，否则返回false
    */
   bool copyWindow(
     const Costmap2D & source,
@@ -201,6 +201,15 @@ public:
    * @param  my Will be set to the associated map y coordinate
    * @note   The returned map coordinates are guaranteed to lie within the map.
    */
+
+  /**
+ * @brief  从世界坐标系转换到地图坐标系，将结果限制在合法范围内。
+ * @param  wx X世界坐标
+ * @param  wy Y世界坐标
+ * @param  mx 将被设置为相关联的地图X坐标
+ * @param  my 将被设置为相关联的地图Y坐标
+ * @note   返回的地图坐标保证在地图范围内。
+ */
   void worldToMapEnforceBounds(double wx, double wy, int & mx, int & my) const;
 
   /**
@@ -325,6 +334,12 @@ public:
    * @param  new_origin_x The x coordinate of the new origin
    * @param  new_origin_y The y coordinate of the new origin
    */
+
+  /**
+ * @brief 将成本地图的原点移动到一个新的位置，尽可能保留数据
+ * @param new_origin_x 新原点的x坐标
+ * @param new_origin_y 新原点的y坐标
+ */
   virtual void updateOrigin(double new_origin_x, double new_origin_y);
 
   /**
@@ -367,17 +382,17 @@ public:
 
 protected:
   /**
-   * @brief  Copy a region of a source map into a destination map
+   * @brief  Copy a region of a source map into a destination map。源地图中的一个区域复制到目标地图
    * @param  source_map The source map
-   * @param sm_lower_left_x The lower left x point of the source map to start the copy
-   * @param sm_lower_left_y The lower left y point of the source map to start the copy
+   * @param sm_lower_left_x The lower left x point of the source map to start the copy。开始复制的源地图左下角的x坐标点
+   * @param sm_lower_left_y The lower left y point of the source map to start the copy。开始复制的源地图左下角的y坐标点
    * @param sm_size_x The x size of the source map
    * @param  dest_map The destination map
-   * @param dm_lower_left_x The lower left x point of the destination map to start the copy
+   * @param dm_lower_left_x The lower left x point of the destination map to start the copy。 开始复制的目标地图左下角的x坐标点
    * @param dm_lower_left_y The lower left y point of the destination map to start the copy
    * @param dm_size_x The x size of the destination map
-   * @param region_size_x The x size of the region to copy
-   * @param region_size_y The y size of the region to copy
+   * @param region_size_x The x size of the region to copy。要复制区域的x尺寸
+   * @param region_size_y The y size of the region to copy。要复制区域的y尺寸
    */
   template<typename data_type>
   void copyMapRegion(
@@ -387,13 +402,15 @@ protected:
     unsigned int dm_lower_left_y, unsigned int dm_size_x, unsigned int region_size_x,
     unsigned int region_size_y)
   {
-    // we'll first need to compute the starting points for each map
+    // we'll first need to compute the starting points for each map。首先计算源数组和目标数组的起始点指针
     data_type * sm_index = source_map + (sm_lower_left_y * sm_size_x + sm_lower_left_x);
     data_type * dm_index = dest_map + (dm_lower_left_y * dm_size_x + dm_lower_left_x);
 
-    // now, we'll copy the source map into the destination map
+    // now, we'll copy the source map into the destination map。接下来，复制源数组中的数据到目标数组
     for (unsigned int i = 0; i < region_size_y; ++i) {
       memcpy(dm_index, sm_index, region_size_x * sizeof(data_type));
+
+       // 更新指针位置到下一行的起始位置
       sm_index += sm_size_x;
       dm_index += dm_size_x;
     }
@@ -427,6 +444,18 @@ protected:
    * allows you to not go all the way to the endpoint
    * @param  min_length The minimum desired length of the segment
    */
+
+  /**
+ * @brief  对一条射线进行追踪，并在每一步应用某个操作
+ * @param  at 要执行的操作，是一个函数对象
+ * @param  x0 起始X坐标
+ * @param  y0 起始Y坐标
+ * @param  x1 结束X坐标
+ * @param  y1 结束Y坐标
+ * @param  max_length 段的最大期望长度...
+ * 允许你不必一直追踪到终点
+ * @param  min_length 段的最小期望长度
+ */
   template<class ActionType>
   inline void raytraceLine(
     ActionType at, unsigned int x0, unsigned int y0, unsigned int x1,

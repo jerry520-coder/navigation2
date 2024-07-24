@@ -31,6 +31,12 @@ namespace nav2_core
  * position of the robot to make sure that it is actually progressing
  * towards a goal.
  */
+
+/**
+ * @class nav2_core::ProgressChecker
+ * @brief 这个类定义了插件接口，用于检查
+ * 机器人的位置，以确保它实际上是在向目标前进。
+ */
 class ProgressChecker
 {
 public:
@@ -51,6 +57,12 @@ public:
    * @param current_pose Current pose of the robot
    * @return True if progress is made
    */
+
+  /**
+ * @brief 检查相比之前的姿态，机器人是否有移动
+ * @param current_pose 机器人的当前姿态
+ * @return 如果有进展，则返回True
+ */
   virtual bool check(geometry_msgs::msg::PoseStamped & current_pose) = 0;
   /**
    * @brief Reset class state upon calling

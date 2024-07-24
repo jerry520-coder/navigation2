@@ -25,12 +25,15 @@ void NodeBasic<Node2D>::processSearchNode()
 template<>
 void NodeBasic<NodeHybrid>::processSearchNode()
 {
-  // We only want to override the node's pose if it has not yet been visited
+    // We only want to override the node's pose if it has not yet been visited
   // to prevent the case that a node has been queued multiple times and
   // a new branch is overriding one of lower cost already visited.
+  // 我们只希望在节点尚未被访问时重写节点的姿态，
+  // 以防一个节点被多次加入队列，并且一个新的分支覆盖了已访问的较低成本的分支。
   if (!this->graph_node_ptr->wasVisited()) {
-    this->graph_node_ptr->pose = this->pose;
-    this->graph_node_ptr->setMotionPrimitiveIndex(this->motion_index);
+    // 如果节点未被访问，则将当前对象的姿态和运动索引设置到图中对应的节点
+    this->graph_node_ptr->pose = this->pose;  // 设置图节点的姿态为当前节点的姿态
+    this->graph_node_ptr->setMotionPrimitiveIndex(this->motion_index); // 设置图节点的运动原始索引为当前节点的运动索引
   }
 }
 
@@ -40,10 +43,13 @@ void NodeBasic<NodeLattice>::processSearchNode()
   // We only want to override the node's pose/primitive if it has not yet been visited
   // to prevent the case that a node has been queued multiple times and
   // a new branch is overriding one of lower cost already visited.
+  // 我们只希望在节点尚未被访问时重写节点的姿态和运动原始，
+  // 以防一个节点被多次加入队列，并且一个新的分支覆盖了已访问的较低成本的分支。
   if (!this->graph_node_ptr->wasVisited()) {
-    this->graph_node_ptr->pose = this->pose;
-    this->graph_node_ptr->setMotionPrimitive(this->prim_ptr);
-    this->graph_node_ptr->backwards(this->backward);
+    // 如果节点未被访问，则将当前对象的姿态设置到图中对应的节点
+    this->graph_node_ptr->pose = this->pose;// 设置图节点的姿态为当前节点的姿态
+    this->graph_node_ptr->setMotionPrimitive(this->prim_ptr);  // 设置图节点的运动原始为当前节点的运动原始指针
+    this->graph_node_ptr->backwards(this->backward);// 设置图节点的行进方向是否为后退
   }
 }
 

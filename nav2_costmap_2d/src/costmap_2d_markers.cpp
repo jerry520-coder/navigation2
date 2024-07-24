@@ -54,6 +54,7 @@ struct Cell
   double z;
   nav2_voxel_grid::VoxelStatus status;
 };
+
 typedef std::vector<Cell> V_Cell;
 
 float g_colors_r[] = {0.0f, 0.0f, 1.0f};
@@ -67,31 +68,38 @@ rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub;
 
 void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
 {
+  // 检查接收到的体素网格数据是否为空
   if (grid->data.empty()) {
     RCLCPP_ERROR(g_node->get_logger(), "Received voxel grid");
     return;
   }
 
+  // 计时器开始，用于测量处理整个体素网格的时间
   nav2_util::ExecutionTimer timer;
   timer.start();
 
+  // 打印调试信息，表示已经收到体素网格
   RCLCPP_DEBUG(g_node->get_logger(), "Received voxel grid");
 
-  const std::string frame_id = grid->header.frame_id;
-  const rclcpp::Time stamp = grid->header.stamp;
-  const uint32_t * data = &grid->data.front();
-  const double x_origin = grid->origin.x;
-  const double y_origin = grid->origin.y;
-  const double z_origin = grid->origin.z;
-  const double x_res = grid->resolutions.x;
-  const double y_res = grid->resolutions.y;
-  const double z_res = grid->resolutions.z;
-  const uint32_t x_size = grid->size_x;
-  const uint32_t y_size = grid->size_y;
-  const uint32_t z_size = grid->size_z;
+  // 提取体素网格消息中的相关数据
+  const std::string frame_id = grid->header.frame_id;  // 体素网格的坐标系ID
+  const rclcpp::Time stamp = grid->header.stamp;      // 时间戳
+  const uint32_t * data = &grid->data.front();        // 指向体素数据的指针
+  const double x_origin = grid->origin.x;             // X原点
+  const double y_origin = grid->origin.y;             // Y原点
+  const double z_origin = grid->origin.z;             // Z原点
+  const double x_res = grid->resolutions.x;           // X分辨率
+  const double y_res = grid->resolutions.y;           // Y分辨率
+  const double z_res = grid->resolutions.z;           // Z分辨率
+  const uint32_t x_size = grid->size_x;               // X尺寸
+  const uint32_t y_size = grid->size_y;               // Y尺寸
+  const uint32_t z_size = grid->size_z;               // Z尺寸
 
+  // 清空先前的标记集合
   g_cells.clear();
   uint32_t num_markers = 0;
+
+  // 遍历体素网格，找出标记为“MARKED”的体素
   for (uint32_t y_grid = 0; y_grid < y_size; ++y_grid) {
     for (uint32_t x_grid = 0; x_grid < x_size; ++x_grid) {
       for (uint32_t z_grid = 0; z_grid < z_size; ++z_grid) {
@@ -100,6 +108,7 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
           x_grid, y_grid,
           z_grid, x_size, y_size, z_size, data);
         if (status == nav2_voxel_grid::MARKED) {
+          // 如果体素被标记，计算其全局坐标并存储
           Cell c;
           c.status = status;
           c.x = x_origin + (x_grid + 0.5) * x_res;
@@ -107,12 +116,13 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
           c.z = z_origin + (z_grid + 0.5) * z_res;
           g_cells.push_back(c);
 
-          ++num_markers;
+          ++num_markers;  // 标记数量增加
         }
       }
     }
   }
 
+  // 创建并配置Marker消息，用于在RViz中显示体素网格
   auto m = std::make_unique<visualization_msgs::msg::Marker>();
   m->header.frame_id = frame_id;
   m->header.stamp = stamp;
@@ -129,6 +139,8 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
   m->color.b = g_colors_b[nav2_voxel_grid::MARKED];
   m->color.a = g_colors_a[nav2_voxel_grid::MARKED];
   m->points.resize(num_markers);
+
+  // 将计算得到的全局坐标填充到Marker的points字段
   for (uint32_t i = 0; i < num_markers; ++i) {
     Cell & c = g_cells[i];
     geometry_msgs::msg::Point & p = m->points[i];
@@ -137,8 +149,10 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
     p.z = c.z;
   }
 
+  // 发布Marker消息
   pub->publish(std::move(m));
 
+  // 计时器结束，并打印处理时间和标记数量
   timer.end();
   RCLCPP_INFO(
     g_node->get_logger(), "Published %d markers in %f seconds",
@@ -148,7 +162,7 @@ void voxelCallback(const nav2_msgs::msg::VoxelGrid::ConstSharedPtr grid)
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  g_node = rclcpp::Node::make_shared("costmap_2d_marker");
+  g_node = rclcpp::Node::make_shared("costmap_2d_marker"); //特别适用于创建标准的 ROS 2 节点
 
   RCLCPP_DEBUG(g_node->get_logger(), "Starting costmap_2d_marker");
 

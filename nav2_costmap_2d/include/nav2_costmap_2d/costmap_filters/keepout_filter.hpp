@@ -54,6 +54,11 @@ namespace nav2_costmap_2d
  * @brief Reads in a keepout mask and marks keepout regions in the map
  * to prevent planning or control in restricted areas
  */
+
+/**
+ * @class KeepoutFilter
+ * @brief 读取禁区掩码，并在地图中标记禁区，以防止在限制区域进行规划或控制
+ */
 class KeepoutFilter : public CostmapFilter
 {
 public:

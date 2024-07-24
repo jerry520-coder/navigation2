@@ -98,7 +98,7 @@ VelocitySmoother::on_configure(const rclcpp_lifecycle::State &)
   node->get_parameter("odom_topic", odom_topic_);
   node->get_parameter("odom_duration", odom_duration_);
   node->get_parameter("deadband_velocity", deadband_velocities_);
-  node->get_parameter("velocity_timeout", velocity_timeout_dbl);
+  node->get_parameter("velocity_timeout", velocity_timeout_dbl); //dbl 是一个缩写，表示 “double”
   velocity_timeout_ = rclcpp::Duration::from_seconds(velocity_timeout_dbl);
 
   if (max_velocities_.size() != 3 || min_velocities_.size() != 3 ||
@@ -181,45 +181,51 @@ VelocitySmoother::on_shutdown(const rclcpp_lifecycle::State &)
 
 void VelocitySmoother::inputCommandCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
-  // If message contains NaN or Inf, ignore
+  // If message contains NaN or Inf, ignore  // 如果消息包含 NaN 或 Inf，忽略该消息
   if (!nav2_util::validateTwist(*msg)) {
     RCLCPP_ERROR(get_logger(), "Velocity message contains NaNs or Infs! Ignoring as invalid!");
     return;
   }
 
-  command_ = msg;
-  last_command_time_ = now();
+  command_ = msg; // 更新命令消息
+  last_command_time_ = now();  // 记录最后一次接收命令的时间
 }
 
 double VelocitySmoother::findEtaConstraint(
   const double v_curr, const double v_cmd, const double accel, const double decel)
 {
-  // Exploiting vector scaling properties
+  // Exploiting vector scaling properties // 利用向量缩放性质
   double dv = v_cmd - v_curr;
 
-  double v_component_max;
+  double v_component_max; // 最大速度分量
   double v_component_min;
 
   // Accelerating if magnitude of v_cmd is above magnitude of v_curr
   // and if v_cmd and v_curr have the same sign (i.e. speed is NOT passing through 0.0)
   // Decelerating otherwise
+  // 如果指令速度的大小大于当前速度的大小，并且指令速度和当前速度的符号相同（即速度不会通过0.0），则加速
+  // 否则减速
   if (abs(v_cmd) >= abs(v_curr) && v_curr * v_cmd >= 0.0) {
+    // 计算加速度下的最大和最小速度分量
     v_component_max = accel / smoothing_frequency_;
     v_component_min = -accel / smoothing_frequency_;
   } else {
+    // 计算减速度下的最大和最小速度分量
     v_component_max = -decel / smoothing_frequency_;
     v_component_min = decel / smoothing_frequency_;
   }
 
+// 如果速度差大于最大速度分量，则返回缩放因子
   if (dv > v_component_max) {
     return v_component_max / dv;
   }
 
+ // 如果速度差小于最小速度分量，则返回缩放因子
   if (dv < v_component_min) {
     return v_component_min / dv;
   }
 
-  return -1.0;
+  return -1.0; // 否则返回 -1.0 表示无需缩放
 }
 
 double VelocitySmoother::applyConstraints(
@@ -228,12 +234,15 @@ double VelocitySmoother::applyConstraints(
 {
   double dv = v_cmd - v_curr;
 
-  double v_component_max;
+  double v_component_max; // 最大速度分量
   double v_component_min;
 
   // Accelerating if magnitude of v_cmd is above magnitude of v_curr
   // and if v_cmd and v_curr have the same sign (i.e. speed is NOT passing through 0.0)
   // Decelerating otherwise
+
+  // 如果指令速度的大小大于当前速度的大小，并且指令速度和当前速度的符号相同（即速度不会通过0.0），则加速
+  // 否则减速
   if (abs(v_cmd) >= abs(v_curr) && v_curr * v_cmd >= 0.0) {
     v_component_max = accel / smoothing_frequency_;
     v_component_min = -accel / smoothing_frequency_;
@@ -247,14 +256,14 @@ double VelocitySmoother::applyConstraints(
 
 void VelocitySmoother::smootherTimer()
 {
-  // Wait until the first command is received
+  // Wait until the first command is received // 等待直到接收到第一个命令
   if (!command_) {
     return;
   }
 
   auto cmd_vel = std::make_unique<geometry_msgs::msg::Twist>();
 
-  // Check for velocity timeout. If nothing received, publish zeros to apply deceleration
+  // Check for velocity timeout. If nothing received, publish zeros to apply deceleration // 检查速度命令是否超时。如果未接收到新命令，发布零速度以应用减速度
   if (now() - last_command_time_ > velocity_timeout_) {
     if (last_cmd_ == geometry_msgs::msg::Twist() || stopped_) {
       stopped_ = true;
@@ -265,7 +274,7 @@ void VelocitySmoother::smootherTimer()
 
   stopped_ = false;
 
-  // Get current velocity based on feedback type
+  // Get current velocity based on feedback type // 根据反馈类型获取当前速度
   geometry_msgs::msg::Twist current_;
   if (open_loop_) {
     current_ = last_cmd_;
@@ -273,7 +282,7 @@ void VelocitySmoother::smootherTimer()
     current_ = odom_smoother_->getTwist();
   }
 
-  // Apply absolute velocity restrictions to the command
+  // Apply absolute velocity restrictions to the command  // 对命令应用绝对速度限制
   command_->linear.x = std::clamp(command_->linear.x, min_velocities_[0], max_velocities_[0]);
   command_->linear.y = std::clamp(command_->linear.y, min_velocities_[1], max_velocities_[1]);
   command_->angular.z = std::clamp(command_->angular.z, min_velocities_[2], max_velocities_[2]);
@@ -283,6 +292,11 @@ void VelocitySmoother::smootherTimer()
   // proportionally to follow the same direction, within change of velocity bounds.
   // In case eta reduces another axis out of its own limit, apply accel constraint to guarantee
   // output is within limits, even if it deviates from requested command slightly.
+
+  // 查找是否有任何分量不在加速度约束范围内。如果是，则存储最显著的缩放因子
+  // 以便将矢量 <dvx, dvy, dvw> 按比例缩小，eta，以在速度变化范围内沿相同方向减小所有轴。
+  // 如果 eta 使另一个轴超出其自身限制，则应用加速度约束以确保输出在限制范围内，
+  // 即使它略微偏离请求的命令。
   double eta = 1.0;
   if (scale_velocities_) {
     double curr_eta = -1.0;
@@ -314,12 +328,23 @@ void VelocitySmoother::smootherTimer()
     current_.angular.z, command_->angular.z, max_accels_[2], max_decels_[2], eta);
   last_cmd_ = *cmd_vel;
 
-  // Apply deadband restrictions & publish
+  // Apply deadband restrictions & publish  // 应用死区限制并发布命令
   cmd_vel->linear.x = fabs(cmd_vel->linear.x) < deadband_velocities_[0] ? 0.0 : cmd_vel->linear.x;
   cmd_vel->linear.y = fabs(cmd_vel->linear.y) < deadband_velocities_[1] ? 0.0 : cmd_vel->linear.y;
   cmd_vel->angular.z = fabs(cmd_vel->angular.z) <
     deadband_velocities_[2] ? 0.0 : cmd_vel->angular.z;
 
+
+  // RCLCPP_WARN(get_logger(), "cmd_vel->linear.x: %f, cmd_vel->linear.y: %f,  cmd_vel->angular.z: %f",  
+  // cmd_vel->linear.x,  cmd_vel->linear.y, cmd_vel->angular.z);
+
+  // //由于gazebo中的后退时前轮转角的方向有问题，故加入这段代码
+  // if (cmd_vel->linear.x < 0.0)
+  // {
+  //   cmd_vel->angular.z = -cmd_vel->angular.z;
+  // }
+
+  
   smoothed_cmd_pub_->publish(std::move(cmd_vel));
 }
 

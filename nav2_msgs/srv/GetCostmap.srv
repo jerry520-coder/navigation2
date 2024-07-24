@@ -1,6 +1,6 @@
 # Get the costmap
 
-# Specifications for the requested costmap
+# Specifications for the requested costmap所需成本计算图的规格
 nav2_msgs/CostmapMetaData specs
 ---
 nav2_msgs/Costmap map

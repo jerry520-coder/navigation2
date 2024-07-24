@@ -38,6 +38,12 @@ namespace nav2_util
  * Wrapper for getting smooth odometry readings using a simple moving avergae.
  * Subscribes to the topic with a mutex.
  */
+
+/**
+ * @class OdomSmoother
+ * 用于通过简单移动平均法获取平滑的里程计读数的封装器。
+ * 订阅主题时使用互斥锁。
+ */
 class OdomSmoother
 {
 public:
@@ -46,6 +52,13 @@ public:
    * @param parent NodeHandle for creating subscriber
    * @param filter_duration Duration for odom history (seconds)
    * @param odom_topic Topic on which odometry should be received
+   */
+
+  /**
+   * @brief 构造函数，用于订阅Odometry话题
+   * @param parent 用于创建订阅器的NodeHandle
+   * @param filter_duration Odometry历史记录的持续时间（秒）
+   * @param odom_topic 应接收里程计数据的话题
    */
   explicit OdomSmoother(
     const rclcpp::Node::WeakPtr & parent,
@@ -58,6 +71,13 @@ public:
    * @param parent NodeHandle for creating subscriber
    * @param filter_duration Duration for odom history (seconds)
    * @param odom_topic Topic on which odometry should be received
+   */
+
+  /**
+   * @brief 构造函数重载，用于订阅Odometry话题的nav_util::LifecycleNode父类
+   * @param parent 用于创建订阅器的NodeHandle
+   * @param filter_duration Odometry历史记录的持续时间（秒）
+   * @param odom_topic 应接收里程计数据的话题
    */
   explicit OdomSmoother(
     const nav2_util::LifecycleNode::WeakPtr & parent,

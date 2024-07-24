@@ -27,10 +27,10 @@ public:
   using Clock = std::chrono::high_resolution_clock;
   using nanoseconds = std::chrono::nanoseconds;
 
-  /// @brief Call just prior to code you want to measure
+  /// @brief Call just prior to code you want to measure。在要测量的代码之前调用
   void start() {start_ = Clock::now();}
 
-  /// @brief Call just after the code you want to measure
+  /// @brief Call just after the code you want to measure。在要测量的代码之后调用
   void end() {end_ = Clock::now();}
 
   /// @brief Extract the measured time as an integral std::chrono::duration object

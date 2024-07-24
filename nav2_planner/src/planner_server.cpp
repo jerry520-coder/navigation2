@@ -78,36 +78,44 @@ PlannerServer::~PlannerServer()
 nav2_util::CallbackReturn
 PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
+  // 配置阶段回调函数
   RCLCPP_INFO(get_logger(), "Configuring");
 
+  // 配置costmap
   costmap_ros_->configure();
   costmap_ = costmap_ros_->getCostmap();
 
-  // Launch a thread to run the costmap node
+  // 启动一个线程来运行costmap节点
   costmap_thread_ = std::make_unique<nav2_util::NodeThread>(costmap_ros_);
 
+  // 输出costmap大小
   RCLCPP_DEBUG(
     get_logger(), "Costmap size: %d,%d",
     costmap_->getSizeInCellsX(), costmap_->getSizeInCellsY());
 
   tf_ = costmap_ros_->getTfBuffer();
 
+  // 初始化planner类型数组
   planner_types_.resize(planner_ids_.size());
 
   auto node = shared_from_this();
 
+  // 遍历每个planner
   for (size_t i = 0; i != planner_ids_.size(); i++) {
     try {
+      // 获取planner类型参数
       planner_types_[i] = nav2_util::get_plugin_type_param(
         node, planner_ids_[i]);
+      // 创建唯一的planner实例
       nav2_core::GlobalPlanner::Ptr planner =
         gp_loader_.createUniqueInstance(planner_types_[i]);
       RCLCPP_INFO(
         get_logger(), "Created global planner plugin %s of type %s",
         planner_ids_[i].c_str(), planner_types_[i].c_str());
       planner->configure(node, planner_ids_[i], tf_, costmap_ros_);
-      planners_.insert({planner_ids_[i], planner});
+      planners_.insert({planner_ids_[i], planner}); // 插入planner到unordered_map中
     } catch (const pluginlib::PluginlibException & ex) {
+      // 如果创建planner失败，则记录错误并返回失败
       RCLCPP_FATAL(
         get_logger(), "Failed to create global planner. Exception: %s",
         ex.what());
@@ -115,6 +123,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     }
   }
 
+  // 输出已配置的所有planner的信息
   for (size_t i = 0; i != planner_ids_.size(); i++) {
     planner_ids_concat_ += planner_ids_[i] + std::string(" ");
   }
@@ -125,6 +134,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 
   double expected_planner_frequency;
   get_parameter("expected_planner_frequency", expected_planner_frequency);
+  // 设置最大planner执行持续时间
   if (expected_planner_frequency > 0) {
     max_planner_duration_ = 1 / expected_planner_frequency;
   } else {
@@ -135,10 +145,10 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     max_planner_duration_ = 0.0;
   }
 
-  // Initialize pubs & subs
+  // 初始化发布器
   plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan", 1);
 
-  // Create the action servers for path planning to a pose and through poses
+  // 创建到位规划的action服务器
   action_server_pose_ = std::make_unique<ActionServerToPose>(
     shared_from_this(),
     "compute_path_to_pose",
@@ -147,6 +157,7 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     std::chrono::milliseconds(500),
     true);
 
+  // 创建通过姿态规划的action服务器
   action_server_poses_ = std::make_unique<ActionServerThroughPoses>(
     shared_from_this(),
     "compute_path_through_poses",
@@ -161,13 +172,16 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
 nav2_util::CallbackReturn
 PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 {
+  // 激活阶段回调函数
   RCLCPP_INFO(get_logger(), "Activating");
 
+  // 激活发布器和action服务器
   plan_publisher_->on_activate();
   action_server_pose_->activate();
   action_server_poses_->activate();
   costmap_ros_->activate();
 
+  // 激活所有planner
   PlannerMap::iterator it;
   for (it = planners_.begin(); it != planners_.end(); ++it) {
     it->second->activate();
@@ -175,17 +189,18 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
 
   auto node = shared_from_this();
 
+  // 创建服务，用于检查路径是否有效
   is_path_valid_service_ = node->create_service<nav2_msgs::srv::IsPathValid>(
     "is_path_valid",
     std::bind(
       &PlannerServer::isPathValid, this,
       std::placeholders::_1, std::placeholders::_2));
 
-  // Add callback for dynamic parameters
+  // 添加动态参数的回调函数
   dyn_params_handler_ = node->add_on_set_parameters_callback(
     std::bind(&PlannerServer::dynamicParametersCallback, this, _1));
 
-  // create bond connection
+  // 创建Bond连接
   createBond();
 
   return nav2_util::CallbackReturn::SUCCESS;
@@ -207,6 +222,14 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
    * unordered_set iteration. Once this issue is resolved, we can maybe make a stronger
    * ordering assumption: https://github.com/ros2/rclcpp/issues/2096
    */
+
+  /*
+ * costmap 也是一个生命周期节点，因此它可能已经通过 rcl 预关闭回调触发了 on_deactivate。
+ * 尽管 rclcpp 文档表示 on_shutdown 回调按添加顺序执行，预关闭回调显然并非如此，因为使用了
+ * 无序集合（unordered_set）迭代。一旦这个问题解决，我们或许可以做出更强的顺序假设：
+ * https://github.com/ros2/rclcpp/issues/2096
+ */
+
   if (costmap_ros_->get_current_state().id() ==
     lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
   {
@@ -240,6 +263,11 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
    * Double check whether something else transitioned it to INACTIVE
    * already, e.g. the rcl preshutdown callback.
    */
+
+  /*
+ * 仔细检查是否已有其他因素使其转变为 INACTIVE 状态，
+ * 例如 rcl 预关闭回调。
+ */
   if (costmap_ros_->get_current_state().id() ==
     lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
   {
@@ -401,7 +429,7 @@ PlannerServer::computePlanThroughPoses()
       return;
     }
 
-    // Get consecutive paths through these points
+    // Get consecutive paths through these points 。获取通过这些点的连续路径
     geometry_msgs::msg::PoseStamped curr_start, curr_goal;
     for (unsigned int i = 0; i != goal->goals.size(); i++) {
       // Get starting point
@@ -412,7 +440,7 @@ PlannerServer::computePlanThroughPoses()
       }
       curr_goal = goal->goals[i];
 
-      // Transform them into the global frame
+      // Transform them into the global frame 
       if (!transformPosesToGlobalFrame(action_server_poses_, curr_start, curr_goal)) {
         return;
       }
@@ -425,7 +453,7 @@ PlannerServer::computePlanThroughPoses()
         return;
       }
 
-      // Concatenate paths together
+      // Concatenate paths together。将路径连接在一起
       concat_path.poses.insert(
         concat_path.poses.end(), curr_path.poses.begin(), curr_path.poses.end());
       concat_path.header = curr_path.header;
@@ -561,26 +589,32 @@ void PlannerServer::isPathValid(
   const std::shared_ptr<nav2_msgs::srv::IsPathValid::Request> request,
   std::shared_ptr<nav2_msgs::srv::IsPathValid::Response> response)
 {
+   // 默认假设路径是有效的
   response->is_valid = true;
 
+ // 如果请求中的路径没有任何位姿，则直接设置为无效并返回
   if (request->path.poses.empty()) {
     response->is_valid = false;
     return;
   }
 
+ // 获取当前机器人的位置
   geometry_msgs::msg::PoseStamped current_pose;
   unsigned int closest_point_index = 0;
   if (costmap_ros_->getRobotPose(current_pose)) {
     float current_distance = std::numeric_limits<float>::max();
     float closest_distance = current_distance;
     geometry_msgs::msg::Point current_point = current_pose.pose.position;
+     // 寻找路径中离当前位置最近的点
     for (unsigned int i = 0; i < request->path.poses.size(); ++i) {
       geometry_msgs::msg::Point path_point = request->path.poses[i].pose.position;
 
+    // 计算当前点到路径上每个点的欧几里得距离
       current_distance = nav2_util::geometry_utils::euclidean_distance(
         current_point,
         path_point);
 
+    // 更新最近点和最近距离 
       if (current_distance < closest_distance) {
         closest_point_index = i;
         closest_distance = current_distance;
@@ -591,15 +625,24 @@ void PlannerServer::isPathValid(
      * The lethal check starts at the closest point to avoid points that have already been passed
      * and may have become occupied
      */
+
+        /**
+     * 从离机器人最近的点开始检查，避免检查已经经过的点可能已经变为被占用的区域
+     */
     std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
     unsigned int mx = 0;
     unsigned int my = 0;
+    // 检查从最近点开始的路径点是否有致命障碍物
     for (unsigned int i = closest_point_index; i < request->path.poses.size(); ++i) {
       costmap_->worldToMap(
         request->path.poses[i].pose.position.x,
         request->path.poses[i].pose.position.y, mx, my);
+
+        // 获取该地图坐标的代价
       unsigned int cost = costmap_->getCost(mx, my);
 
+
+    // 如果代价显示有致命或膨胀的障碍物，标记路径为无效
       if (cost == nav2_costmap_2d::LETHAL_OBSTACLE ||
         cost == nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE)
       {

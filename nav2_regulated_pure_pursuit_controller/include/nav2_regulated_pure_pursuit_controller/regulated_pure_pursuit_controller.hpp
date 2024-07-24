@@ -118,6 +118,14 @@ protected:
    * @param pose pose to transform
    * @return Path in new frame
    */
+
+  /**
+   * @brief 将全局规划转换为与姿态相同的坐标系，并裁剪掉不适合作为前瞻点的姿态。
+   * 以下情况的点不适合被选为前瞻点：
+   * - 在局部代价地图（local_costmap）之外（无法保证避免碰撞）
+   * @param pose 要转换的姿态
+   * @return 在新坐标系中的路径
+   */
   nav_msgs::msg::Path transformGlobalPlan(
     const geometry_msgs::msg::PoseStamped & pose);
 
@@ -212,6 +220,12 @@ protected:
     const nav_msgs::msg::Path & path
   ) const;
 
+/**
+ * @brief 根据机器人与路径终点的距离来调整机器人的线速度，以便在接近路径终点时减速。这样可以使机器人更平稳地停止，而不是突然停下来。
+ * 
+ * @param path 
+ * @param linear_vel 
+ */
   void applyApproachVelocityScaling(
     const nav_msgs::msg::Path & path,
     double & linear_vel
@@ -238,6 +252,15 @@ protected:
    * @param p2 second endpoint of line segment
    * @param r radius of circle
    * @return point of intersection
+   */
+
+  /**
+   * @brief 查找一个以原点为中心的圆与线段的交点。
+   * 如果没有找到交点，将发生浮点错误。
+   * @param p1 线段的第一个端点
+   * @param p2 线段的第二个端点
+   * @param r 圆的半径
+   * @return 交点的位置
    */
   static geometry_msgs::msg::Point circleSegmentIntersection(
     const geometry_msgs::msg::Point & p1,
@@ -271,6 +294,27 @@ protected:
    */
   rcl_interfaces::msg::SetParametersResult
   dynamicParametersCallback(std::vector<rclcpp::Parameter> parameters);
+
+
+  /**
+ * @brief 将平移和旋转速度转换为汽车机器人的转向角 Convert translational and rotational velocities to a steering angle of a carlike robot
+ * 转换基于以下公式：
+ * - 转弯半径的定义是 \f$ R = v/omega \f$
+ * 对于两轴之间距离为 L 的汽车机器人，其关系式为\tan(phi) = L/R
+ * phi 表示转向角。
+ *
+ * The conversion is based on the following equations:
+ * - The turning radius is defined by \f$ R = v/omega \f$
+ * - For a car like robot withe a distance L between both axles, the relation is: \f$ tan(\phi) = L/R \f$
+ * - phi denotes the steering angle.
+ * @remarks 您可以提供距离而不是速度，因为不需要时间信息。You might provide distances instead of velocities, since the temporal information is not required.
+ * @param v translational velocity [m/s]
+ * @param omega rotational velocity [rad/s]
+ * @param wheelbase 两轴（传动轴和转向轴）之间的距离，对于后轮机器人，该值可能为负数 distance between both axles (drive shaft and steering axle), the value might be negative for back_wheeled robots
+ * @param min_turning_radius Specify a lower bound on the turning radius
+ * @return 在 [-pi/2, pi/2] 之间的转向角（单位：弧度］ Resulting steering angle in [rad] inbetween [-pi/2, pi/2]
+ */
+double convertTransRotVelToSteeringAngle(double v, double omega, double wheelbase, double min_turning_radius = 0) const;
 
   rclcpp_lifecycle::LifecycleNode::WeakPtr node_;
   std::shared_ptr<tf2_ros::Buffer> tf_;

@@ -67,7 +67,7 @@ public:
   void generateNextNoises();
 
   /**
-   * @brief set noised control_sequence to state controls
+   * @brief 将噪声添加到控制序列中，生成带有噪声的控制参数，并存储到 State 对象的对应成员变量中。set noised control_sequence to state controls
    * @return noises vx, vy, wz
    */
   void setNoisedControls(models::State & state, const models::ControlSequence & control_sequence);

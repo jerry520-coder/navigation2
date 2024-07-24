@@ -31,7 +31,7 @@ namespace nav2_util
 
 /**
  * @class nav2_util::SimpleActionServer
- * @brief An action server wrapper to make applications simpler using Actions
+ * @brief 一个action server的封装器，用于通过使用动作（Actions）使应用程序更简单。An action server wrapper to make applications simpler using Actions
  */
 template<typename ActionT>
 class SimpleActionServer
@@ -39,7 +39,8 @@ class SimpleActionServer
 public:
   // Callback function to complete main work. This should itself deal with its
   // own exceptions, but if for some reason one is thrown, it will be caught
-  // in SimpleActionServer and terminate the action itself.
+  // in SimpleActionServer and terminate the action itself.、
+  // 回调函数用于完成主要工作。这个函数应该自行处理它的异常，但如果出于某种原因抛出了异常，它会在SimpleActionServer中被捕获，并终止动作本身。
   typedef std::function<void ()> ExecuteCallback;
 
   // Callback function to notify the user that an exception was thrown that
@@ -47,6 +48,8 @@ public:
   // terminated. To avoid using, catch exceptions in your application such that
   // the SimpleActionServer will never need to terminate based on failed action
   // ExecuteCallback.
+  // 回调函数用于通知用户一个异常被抛出，这个异常被SimpleActionServer捕获了（或者发生了其他失败），并且动作被终止了。
+  // 为了避免使用，捕获你的应用程序中的异常，以便SimpleActionServer永远不需要基于失败的动作ExecuteCallback来终止。
   typedef std::function<void ()> CompletionCallback;
 
   /**
@@ -58,6 +61,16 @@ public:
    * @param spin_thread Whether to spin with a dedicated thread internally
    * @param options Options to pass to the underlying rcl_action_server_t
    */
+
+  /**
+ * @brief SimpleActionServer的构造函数
+ * @param node 用于执行动作的节点的指针
+ * @param action_name 要调用的动作的名称
+ * @param execute_callback 动作的执行回调函数
+ * @param server_timeout 对停止或抢占请求做出反应的超时时间
+ * @param spin_thread 是否在内部使用一个专用线程进行旋转
+ * @param options 传递给底层rcl_action_server_t的选项
+ */
   template<typename NodeT>
   explicit SimpleActionServer(
     NodeT node,
@@ -84,6 +97,16 @@ public:
    * @param spin_thread Whether to spin with a dedicated thread internally
    * @param options Options to pass to the underlying rcl_action_server_t
    */
+
+  /**
+ * @brief 一个用于SimpleActionServer的构造函数
+ * @param <node interfaces> 用于创建动作的抽象节点接口
+ * @param action_name 要调用的动作的名称
+ * @param execute_callback 动作的执行回调函数
+ * @param server_timeout 用于对停止或抢占请求作出反应的超时时间
+ * @param spin_thread 是否在内部使用专用线程进行旋转
+ * @param options 传递给底层rcl_action_server_t的选项
+ */
   explicit SimpleActionServer(
     rclcpp::node_interfaces::NodeBaseInterface::SharedPtr node_base_interface,
     rclcpp::node_interfaces::NodeClockInterface::SharedPtr node_clock_interface,
@@ -105,10 +128,12 @@ public:
     server_timeout_(server_timeout),
     spin_thread_(spin_thread)
   {
+    // 方法体开始
     using namespace std::placeholders;  // NOLINT
     if (spin_thread_) {
+       // 如果需要在单独的线程中旋转回调
       callback_group_ = node_base_interface->create_callback_group(
-        rclcpp::CallbackGroupType::MutuallyExclusive, false);
+        rclcpp::CallbackGroupType::MutuallyExclusive, false); //指定了回调组的类型为“互斥”(Mutually Exclusive)。在互斥回调组中，同一时间只能有一个回调被执行
     }
     action_server_ = rclcpp_action::create_server<ActionT>(
       node_base_interface_,
@@ -122,9 +147,10 @@ public:
       options,
       callback_group_);
     if (spin_thread_) {
-      executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
-      executor_->add_callback_group(callback_group_, node_base_interface_);
-      executor_thread_ = std::make_unique<nav2_util::NodeThread>(executor_);
+      // 如果需要在单独的线程中旋转回调
+      executor_ = std::make_shared<rclcpp::executors::SingleThreadedExecutor>(); // 创建单线程执行器
+      executor_->add_callback_group(callback_group_, node_base_interface_); // 将回调组添加到执行器中
+      executor_thread_ = std::make_unique<nav2_util::NodeThread>(executor_); // 创建并启动执行器线程
     }
   }
 

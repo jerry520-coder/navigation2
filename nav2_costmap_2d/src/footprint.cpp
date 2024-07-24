@@ -156,7 +156,7 @@ std::vector<geometry_msgs::msg::Point> makeFootprintFromRadius(double radius)
 {
   std::vector<geometry_msgs::msg::Point> points;
 
-  // Loop over 16 angles around a circle making a point each time
+  // Loop over 16 angles around a circle making a point each time。环绕一个圆圈转 16 个角，每次转一个点
   int N = 16;
   geometry_msgs::msg::Point pt;
   for (int i = 0; i < N; ++i) {
@@ -172,22 +172,27 @@ std::vector<geometry_msgs::msg::Point> makeFootprintFromRadius(double radius)
 
 
 bool makeFootprintFromString(
-  const std::string & footprint_string,
-  std::vector<geometry_msgs::msg::Point> & footprint)
+  const std::string & footprint_string, // 足迹数据字符串
+  std::vector<geometry_msgs::msg::Point> & footprint) // 存储点坐标的向量
 {
-  std::string error;
-  std::vector<std::vector<float>> vvf = parseVVF(footprint_string, error);
+  std::string error; // 用于存储解析过程中出现的错误信息
 
+  // 解析字符串为一个向量的向量，每个内部向量代表一个点的坐标
+  std::vector<std::vector<float>> vvf = parseVVF(footprint_string, error); //vvf 是一个变量名，通常这个名字是 std::vector<std::vector<float>> 类型的缩写
+
+  // 检查是否有解析错误
   if (error != "") {
+    // 打印错误日志
     RCLCPP_ERROR(
-      rclcpp::get_logger(
-        "nav2_costmap_2d"), "Error parsing footprint parameter: '%s'", error.c_str());
+      rclcpp::get_logger("nav2_costmap_2d"),
+      "Error parsing footprint parameter: '%s'", error.c_str());
     RCLCPP_ERROR(
-      rclcpp::get_logger(
-        "nav2_costmap_2d"), "  Footprint string was '%s'.", footprint_string.c_str());
+      rclcpp::get_logger("nav2_costmap_2d"),
+      "  Footprint string was '%s'.", footprint_string.c_str());
     return false;
   }
 
+  // 检查是否有至少三个点，因为多边形至少需要三个点
   // convert vvf into points.
   if (vvf.size() < 3) {
     RCLCPP_ERROR(
@@ -196,25 +201,31 @@ bool makeFootprintFromString(
       "You must specify at least three points for the robot footprint, reverting to previous footprint."); //NOLINT
     return false;
   }
+
+  // 为了性能优化，预留足够的空间
   footprint.reserve(vvf.size());
+
+  // 将每个点的数据转换为Point类型，并添加到footprint向量中
   for (unsigned int i = 0; i < vvf.size(); i++) {
-    if (vvf[i].size() == 2) {
-      geometry_msgs::msg::Point point;
-      point.x = vvf[i][0];
-      point.y = vvf[i][1];
-      point.z = 0;
-      footprint.push_back(point);
+    if (vvf[i].size() == 2) { // 确保每个点由两个浮点数构成
+      geometry_msgs::msg::Point point; // 创建一个点
+      point.x = vvf[i][0]; // x坐标
+      point.y = vvf[i][1]; // y坐标
+      point.z = 0; // z坐标默认为0
+      footprint.push_back(point); // 将点添加到足迹向量中
     } else {
+      // 如果点的数据不符合要求，打印错误日志并返回false
       RCLCPP_ERROR(
         rclcpp::get_logger(
           "nav2_costmap_2d"),
-        "Points in the footprint specification must be pairs of numbers. Found a point with %d numbers.", //NOLINT
+          // footprint规范中的点必须是成对的数字。找到一个包含 %d 个数字的点。
+        "Points in the footprint specification must be pairs of numbers. Found a point with %d numbers.", //NOLINT  
         static_cast<int>(vvf[i].size()));
       return false;
     }
   }
 
-  return true;
+  return true; // 如果所有点都正确处理，返回true
 }
 
 }  // end namespace nav2_costmap_2d

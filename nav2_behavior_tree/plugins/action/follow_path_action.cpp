@@ -38,29 +38,35 @@ void FollowPathAction::on_tick()
 void FollowPathAction::on_wait_for_result(
   std::shared_ptr<const nav2_msgs::action::FollowPath::Feedback>/*feedback*/)
 {
-  // Grab the new path
+  // 抓取新路径
   nav_msgs::msg::Path new_path;
-  getInput("path", new_path);
+  getInput("path", new_path); // 从行为树的输入端口获取新路径
 
-  // Check if it is not same with the current one
+  // 检查新路径是否与当前目标路径不同
   if (goal_.path != new_path) {
-    // the action server on the next loop iteration
+    // 如果新路径与当前路径不同，则更新目标路径，并标记目标已更新
     goal_.path = new_path;
     goal_updated_ = true;
   }
 
+  // 抓取新控制器ID
   std::string new_controller_id;
-  getInput("controller_id", new_controller_id);
+  getInput("controller_id", new_controller_id); // 从行为树的输入端口获取新控制器ID
 
+  // 检查新控制器ID是否与当前目标控制器ID不同
   if (goal_.controller_id != new_controller_id) {
+    // 如果新控制器ID与当前控制器ID不同，则更新目标控制器ID，并标记目标已更新
     goal_.controller_id = new_controller_id;
     goal_updated_ = true;
   }
 
+  // 抓取新目标检查器ID
   std::string new_goal_checker_id;
-  getInput("goal_checker_id", new_goal_checker_id);
+  getInput("goal_checker_id", new_goal_checker_id); // 从行为树的输入端口获取新目标检查器ID
 
+  // 检查新目标检查器ID是否与当前目标目标检查器ID不同
   if (goal_.goal_checker_id != new_goal_checker_id) {
+    // 如果新目标检查器ID与当前目标检查器ID不同，则更新目标目标检查器ID，并标记目标已更新
     goal_.goal_checker_id = new_goal_checker_id;
     goal_updated_ = true;
   }

@@ -31,7 +31,7 @@ struct Control
 
 /**
  * @struct mppi::models::ControlSequence
- * @brief A control sequence over time (e.g. trajectory)
+ * @brief 随时间变化的控制序列（如轨迹）vx、vy、wz。A control sequence over time (e.g. trajectory)
  */
 struct ControlSequence
 {

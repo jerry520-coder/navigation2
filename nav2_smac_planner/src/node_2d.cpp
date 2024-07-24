@@ -21,7 +21,7 @@
 namespace nav2_smac_planner
 {
 
-// defining static member for all instance to share
+// defining static member for all instance to share 。定义所有实例共享的静态成员
 std::vector<int> Node2D::_neighbors_grid_offsets;
 float Node2D::cost_travel_multiplier = 2.0;
 

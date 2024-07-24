@@ -261,17 +261,22 @@ void VoxelLayer::raytraceFreespace(
   double * max_x,
   double * max_y)
 {
+  // 创建一个点云对象，用于存储射线的端点
   auto clearing_endpoints_ = std::make_unique<sensor_msgs::msg::PointCloud2>();
 
+ // 如果观测对象的数据为空，直接返回
   if (clearing_observation.cloud_->height == 0 || clearing_observation.cloud_->width == 0) {
     return;
   }
 
-  double sensor_x, sensor_y, sensor_z;
-  double ox = clearing_observation.origin_.x;
+ // 获取传感器原点的世界坐标和地图坐标
+  double sensor_x, sensor_y, sensor_z; //map coordinates
+  double ox = clearing_observation.origin_.x; //world coordinates
   double oy = clearing_observation.origin_.y;
   double oz = clearing_observation.origin_.z;
 
+// 如果传感器原点超出地图范围，发出警告并返回
+// Covert world coordinates into map coordinates
   if (!worldToMap3DFloat(ox, oy, oz, sensor_x, sensor_y, sensor_z)) {
     RCLCPP_WARN(
       logger_,
@@ -286,69 +291,92 @@ void VoxelLayer::raytraceFreespace(
     return;
   }
 
+// 判断是否需要发布射线的端点
   bool publish_clearing_points;
 
   {
+     // 获取节点的共享指针
     auto node = node_.lock();
+     // 如果节点不存在，抛出异常
     if (!node) {
       throw std::runtime_error{"Failed to lock node"};
     }
+    // 如果有订阅者，设置发布标志为真
     publish_clearing_points = (node->count_subscribers("clearing_endpoints") > 0);
   }
 
+ // 清空点云对象的数据
   clearing_endpoints_->data.clear();
+  // 设置点云对象的宽度和高度
   clearing_endpoints_->width = clearing_observation.cloud_->width;
   clearing_endpoints_->height = clearing_observation.cloud_->height;
+  // 设置点云对象的密集性和字节序
   clearing_endpoints_->is_dense = true;
   clearing_endpoints_->is_bigendian = false;
 
+// 创建一个点云修改器，用于设置点云对象的字段
   sensor_msgs::PointCloud2Modifier modifier(*clearing_endpoints_);
   modifier.setPointCloud2Fields(
     3, "x", 1, sensor_msgs::msg::PointField::FLOAT32,
     "y", 1, sensor_msgs::msg::PointField::FLOAT32,
     "z", 1, sensor_msgs::msg::PointField::FLOAT32);
 
+// 创建三个点云迭代器，分别用于访问x, y, z坐标
   sensor_msgs::PointCloud2Iterator<float> clearing_endpoints_iter_x(*clearing_endpoints_, "x");
   sensor_msgs::PointCloud2Iterator<float> clearing_endpoints_iter_y(*clearing_endpoints_, "y");
   sensor_msgs::PointCloud2Iterator<float> clearing_endpoints_iter_z(*clearing_endpoints_, "z");
 
   // we can pre-compute the enpoints of the map outside of the inner loop... we'll need these later
+  // 我们可以在内层循环之外预计算地图的端点坐标，后面会用到
   double map_end_x = origin_x_ + getSizeInMetersX();
   double map_end_y = origin_y_ + getSizeInMetersY();
   double map_end_z = origin_z_ + getSizeInMetersZ();
 
+ // 创建三个点云迭代器，分别用于访问x, y, z坐标
   sensor_msgs::PointCloud2ConstIterator<float> iter_x(*(clearing_observation.cloud_), "x");
   sensor_msgs::PointCloud2ConstIterator<float> iter_y(*(clearing_observation.cloud_), "y");
   sensor_msgs::PointCloud2ConstIterator<float> iter_z(*(clearing_observation.cloud_), "z");
 
+// 遍历观测对象的数据，对每个点进行射线追踪，将射线路径上的体素标记为自由空间
   for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
+    // 获取当前点的世界坐标
     double wpx = *iter_x;
     double wpy = *iter_y;
     double wpz = *iter_z;
 
+    // 计算从原点到当前点的距离
     double distance = dist(ox, oy, oz, wpx, wpy, wpz);
+
+    // 定义一个缩放因子，用于调整射线的长度
     double scaling_fact = 1.0;
+    // 将缩放因子限制在0到1之间，使得射线的长度不超过距离减去两倍的分辨率
     scaling_fact = std::max(std::min(scaling_fact, (distance - 2 * resolution_) / distance), 0.0);
-    wpx = scaling_fact * (wpx - ox) + ox;
+    // 根据缩放因子计算射线的端点坐标
+    wpx = scaling_fact * (wpx - ox) + ox; ///world coordinates
     wpy = scaling_fact * (wpy - oy) + oy;
     wpz = scaling_fact * (wpz - oz) + oz;
 
+    // 计算从原点到射线端点的向量
     double a = wpx - ox;
     double b = wpy - oy;
     double c = wpz - oz;
-    double t = 1.0;
+    double t = 1.0;// 定义一个参数t，用于缩放向量
 
     // we can only raytrace to a maximum z height
+    // 我们只能射线追踪到最大的z高度
     if (wpz > map_end_z) {
       // we know we want the vector's z value to be max_z
+      // 计算使得向量的z值为map_end_z的参数t，如果小于0则取0，如果大于1则取1
       t = std::max(0.0, std::min(t, (map_end_z - 0.01 - oz) / c));
     } else if (wpz < origin_z_) {
       // and we can only raytrace down to the floor
       // we know we want the vector's z value to be 0.0
+      // 计算使得向量的z值为origin_z_的参数t，如果大于1则取1
       t = std::min(t, (origin_z_ - oz) / c);
     }
 
     // the minimum value to raytrace from is the origin
+    // 射线追踪的最小值是原点
     if (wpx < origin_x_) {
       t = std::min(t, (origin_x_ - ox) / a);
     }

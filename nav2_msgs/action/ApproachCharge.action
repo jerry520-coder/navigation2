@@ -1,0 +1,12 @@
+#goal definition
+int32 approach_charge_goal
+---
+#result definition
+float32 x
+float32 y
+float32 z
+bool success
+---
+#feedback definition
+float32 progress [3]
+float current_distance; #当前距离充电桩的距离

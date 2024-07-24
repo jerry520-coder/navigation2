@@ -35,18 +35,22 @@ namespace nav2_lifecycle_manager
 LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
 : Node("lifecycle_manager", options), diagnostics_updater_(this)
 {
+  // 创建时记录信息
   RCLCPP_INFO(get_logger(), "Creating");
 
   // The list of names is parameterized, allowing this module to be used with a different set
   // of nodes
+  // 声明参数。这些参数允许对使用的节点名单、自动启动设置、绑定超时和重连尝试等进行配置
   declare_parameter("node_names", rclcpp::PARAMETER_STRING_ARRAY);
   declare_parameter("autostart", rclcpp::ParameterValue(false));
   declare_parameter("bond_timeout", 4.0);
   declare_parameter("bond_respawn_max_duration", 10.0);
   declare_parameter("attempt_respawn_reconnection", true);
 
+ // 注册一个在ROS 2环境准备关闭前执行的回调函数 
   registerRclPreshutdownCallback();
 
+// 从参数服务器获取参数值，并赋值给成员变量
   node_names_ = get_parameter("node_names").as_string_array();
   get_parameter("autostart", autostart_);
   double bond_timeout_s;
@@ -60,19 +64,24 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
 
   get_parameter("attempt_respawn_reconnection", attempt_respawn_reconnection_);
 
+ // 创建一个回调组，用于管理节点服务调用的互斥性
   callback_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive, false);
+
+   // 创建服务，用于管理生命周期节点
   manager_srv_ = create_service<ManageLifecycleNodes>(
     get_name() + std::string("/manage_nodes"),
     std::bind(&LifecycleManager::managerCallback, this, _1, _2, _3),
     rclcpp::ServicesQoS().get_rmw_qos_profile(),
     callback_group_);
 
+ // 创建服务，用于检查节点是否激活
   is_active_srv_ = create_service<std_srvs::srv::Trigger>(
     get_name() + std::string("/is_active"),
     std::bind(&LifecycleManager::isActiveCallback, this, _1, _2, _3),
     rclcpp::ServicesQoS().get_rmw_qos_profile(),
     callback_group_);
 
+// 初始化状态映射，用于处理不同生命周期状态的转换
   transition_state_map_[Transition::TRANSITION_CONFIGURE] = State::PRIMARY_STATE_INACTIVE;
   transition_state_map_[Transition::TRANSITION_CLEANUP] = State::PRIMARY_STATE_UNCONFIGURED;
   transition_state_map_[Transition::TRANSITION_ACTIVATE] = State::PRIMARY_STATE_ACTIVE;
@@ -80,6 +89,7 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   transition_state_map_[Transition::TRANSITION_UNCONFIGURED_SHUTDOWN] =
     State::PRIMARY_STATE_FINALIZED;
 
+ // 初始化状态转换时的标签映射，用于日志记录和用户界面显示
   transition_label_map_[Transition::TRANSITION_CONFIGURE] = std::string("Configuring ");
   transition_label_map_[Transition::TRANSITION_CLEANUP] = std::string("Cleaning up ");
   transition_label_map_[Transition::TRANSITION_ACTIVATE] = std::string("Activating ");
@@ -87,25 +97,34 @@ LifecycleManager::LifecycleManager(const rclcpp::NodeOptions & options)
   transition_label_map_[Transition::TRANSITION_UNCONFIGURED_SHUTDOWN] =
     std::string("Shutting down ");
 
+  // 创建一个定时器，用于初始化生命周期服务客户端
   init_timer_ = this->create_wall_timer(
-    0s,
-    [this]() -> void {
-      init_timer_->cancel();
-      createLifecycleServiceClients();
-      if (autostart_) {
+    0s,  // 定时器触发时间，0秒表示立即触发
+    [this]() -> void {  // 定时器触发时执行的lambda表达式
+      init_timer_->cancel();  // 取消当前定时器，防止重复触发
+      createLifecycleServiceClients();  // 创建生命周期服务客户端
+
+      if (autostart_) {  // 检查是否设置了自动启动
+        // 如果设置了自动启动，再次创建一个定时器，用于启动所有节点
         init_timer_ = this->create_wall_timer(
-          0s,
+          0s,  // 同样设置为0秒，即立即触发
           [this]() -> void {
-            init_timer_->cancel();
-            startup();
+            init_timer_->cancel();  // 取消当前定时器
+            startup();  // 启动所有节点的函数
           },
-          callback_group_);
+          callback_group_);  // 使用特定的回调组
       }
+
+      // 创建一个单线程执行器
       auto executor = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
-      executor->add_callback_group(callback_group_, get_node_base_interface());
-      service_thread_ = std::make_unique<nav2_util::NodeThread>(executor);
-    });
+      executor->add_callback_group(callback_group_, get_node_base_interface());  // 将回调组添加到执行器
+      service_thread_ = std::make_unique<nav2_util::NodeThread>(executor);  // 在新线程中启动执行器
+    });  
+
+// 设置硬件ID为"Nav2"，用于诊断信息中标识硬件或软件实体
   diagnostics_updater_.setHardwareID("Nav2");
+
+  // 添加一个诊断任务
   diagnostics_updater_.add("Nav2 Health", this, &LifecycleManager::CreateActiveDiagnostic);
 }
 
@@ -181,20 +200,29 @@ LifecycleManager::destroyLifecycleServiceClients()
 bool
 LifecycleManager::createBondConnection(const std::string & node_name)
 {
+  // 将存储的超时时间从毫秒转换为纳秒，然后计算出秒数
   const double timeout_ns =
     std::chrono::duration_cast<std::chrono::nanoseconds>(bond_timeout_).count();
-  const double timeout_s = timeout_ns / 1e9;
+  const double timeout_s = timeout_ns / 1e9; // 将纳秒转换为秒
 
+  // 检查指定的节点是否已经存在于bond映射中并且超时时间大于0
   if (bond_map_.find(node_name) == bond_map_.end() && bond_timeout_.count() > 0.0) {
+    // 如果节点不在绑定映射中，创建一个新的bond实例，并加入映射
     bond_map_[node_name] =
       std::make_shared<bond::Bond>("bond", node_name, shared_from_this());
+    // 设置心跳超时时间
     bond_map_[node_name]->setHeartbeatTimeout(timeout_s);
+    // 设置心跳周期
     bond_map_[node_name]->setHeartbeatPeriod(0.10);
+    // 开始bond
     bond_map_[node_name]->start();
+
+    // 等待bond形成，超时时间为原本超时时间的一半
     if (
       !bond_map_[node_name]->waitUntilFormed(
         rclcpp::Duration(rclcpp::Duration::from_nanoseconds(timeout_ns / 2))))
     {
+      // 如果绑定没有在超时时间内成功形成，记录错误日志并返回false
       RCLCPP_ERROR(
         get_logger(),
         "Server %s was unable to be reached after %0.2fs by bond. "
@@ -202,9 +230,11 @@ LifecycleManager::createBondConnection(const std::string & node_name)
         node_name.c_str(), timeout_s);
       return false;
     }
+    // 如果绑定成功形成，记录信息日志
     RCLCPP_INFO(get_logger(), "Server %s connected with bond.", node_name.c_str());
   }
 
+  // 返回true表示绑定成功
   return true;
 }
 
@@ -278,17 +308,30 @@ LifecycleManager::shutdownAllNodes()
 bool
 LifecycleManager::startup()
 {
-  message("Starting managed nodes bringup...");
-  if (!changeStateForAllNodes(Transition::TRANSITION_CONFIGURE) ||
-    !changeStateForAllNodes(Transition::TRANSITION_ACTIVATE))
-  {
-    RCLCPP_ERROR(get_logger(), "Failed to bring up all requested nodes. Aborting bringup.");
-    return false;
-  }
-  message("Managed nodes are active");
-  system_active_ = true;
-  createBondTimer();
-  return true;
+    // 在日志中输出启动节点的信息
+    message("Starting managed nodes bringup...");
+
+    // 尝试将所有节点配置到配置状态，然后激活它们。
+    // 如果任一步骤失败，记录错误并返回false
+    if (!changeStateForAllNodes(Transition::TRANSITION_CONFIGURE) ||
+        !changeStateForAllNodes(Transition::TRANSITION_ACTIVATE))
+    {
+      // 如果无法成功启动所有节点，则在日志中记录错误并中止启动过程
+      RCLCPP_ERROR(get_logger(), "Failed to bring up all requested nodes. Aborting bringup.");
+      return false;
+    }
+
+    // 如果所有节点均成功启动，输出节点激活的信息
+    message("Managed nodes are active");
+
+    // 设置系统激活标志为真，表示所有管理的节点均已成功激活
+    system_active_ = true;
+
+    // 创建bond计时器，用于监视节点之间的连接状态
+    createBondTimer();
+
+    // 返回true表示所有节点已成功启动并激活
+    return true;
 }
 
 bool
@@ -495,12 +538,14 @@ LifecycleManager::checkBondRespawnConnection()
   }
 }
 
-#define ANSI_COLOR_RESET    "\x1b[0m"
-#define ANSI_COLOR_BLUE     "\x1b[34m"
+#define ANSI_COLOR_RESET    "\x1b[0m" // 重置颜色到默认
+#define ANSI_COLOR_BLUE     "\x1b[34m" // 设置颜色为蓝色
 
 void
 LifecycleManager::message(const std::string & msg)
 {
+    // 使用RCLCPP_INFO宏将消息输出到ROS 2日志系统，消息文本使用蓝色和加粗格式
+  // '\33[1m' 和 '\33[0m' 分别是ANSI控制码，用于设置文本为加粗和重置所有属性到默认
   RCLCPP_INFO(get_logger(), ANSI_COLOR_BLUE "\33[1m%s\33[0m" ANSI_COLOR_RESET, msg.c_str());
 }
 

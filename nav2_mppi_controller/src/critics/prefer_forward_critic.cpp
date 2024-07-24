@@ -30,16 +30,23 @@ void PreferForwardCritic::initialize()
     logger_, "PreferForwardCritic instantiated with %d power and %f weight.", power_, weight_);
 }
 
-void PreferForwardCritic::score(CriticData & data)
+void PreferForwardCritic::score(CriticData & data) 
 {
+  // 使用xt库的即时评估策略
   using xt::evaluation_strategy::immediate;
+  // 如果该批评者未启用，或者机器人已经在目标位置容忍范围内，则不计算成本
   if (!enabled_ ||
-    utils::withinPositionGoalTolerance(threshold_to_consider_, data.state.pose.pose, data.path))
-  {
+    utils::withinPositionGoalTolerance(threshold_to_consider_, data.state.pose.pose, data.path)) {
     return;
   }
 
+  // 计算机器人的后退运动速度，如果速度为负，则取其绝对值
+  // 这里使用xt::maximum函数来确保速度不会小于0，即只考虑后退时的速度
   auto backward_motion = xt::maximum(-data.state.vx, 0);
+
+  // 累加成本，考虑后退运动的速度、模型的时间步长（data.model_dt）和权重
+  // xt::sum函数对所有后退速度值求和，然后乘以时间步长和权重
+  // 之后使用xt::pow函数将求和结果按指定的指数次幂计算成本
   data.costs += xt::pow(
     xt::sum(
       std::move(

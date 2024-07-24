@@ -52,6 +52,16 @@ bool getCurrentPose(
 * @param transform_timeout TF Timeout to use for transformation
 * @return bool Whether it could be transformed successfully
 */
+
+/**
+ * @brief 在目标坐标系中获取任意姿态
+ * @param input_pose 需要变换的姿态
+ * @param transformed_pose 变换后的输出姿态
+ * @param tf_buffer 用于变换的TF缓冲区
+ * @param target_frame 需要变换到的目标坐标系
+ * @param transform_timeout 变换操作的超时时间
+ * @return bool 是否成功进行了变换
+ */
 bool transformPoseInTargetFrame(
   const geometry_msgs::msg::PoseStamped & input_pose,
   geometry_msgs::msg::PoseStamped & transformed_pose,
@@ -99,6 +109,19 @@ bool getTransform(
  * @param tf_transform Output source->target transform
  * @return True if got correct transform, otherwise false
  */
+
+/**
+ * @brief 获取从源时间点的源坐标系到目标时间点的目标坐标系的变换
+ * @param source_frame_id 要转换的源坐标系ID
+ * @param source_time 要转换的源时间戳
+ * @param target_frame_id 要转换到的目标坐标系ID
+ * @param target_time 用于插值的当前节点时间
+ * @param fixed_frame_id 假设变换在此坐标系中随时间恒定的坐标系
+ * @param transform_tolerance 变换的容忍度
+ * @param tf_buffer 用于变换的TF缓冲区
+ * @param tf_transform 输出的源到目标的变换
+ * @return 如果成功获取正确的变换，则返回True，否则返回False
+ */
 bool getTransform(
   const std::string & source_frame_id,
   const rclcpp::Time & source_time,
@@ -113,6 +136,12 @@ bool getTransform(
  * @brief Validates a twist message contains no nans or infs
  * @param msg Twist message to validate
  * @return True if valid, false if contains unactionable values
+ */
+
+/**
+ * @brief 验证 twist 消息是否包含 NaNs 或 Infs
+ * @param msg 要验证的 twist 消息
+ * @return 如果有效返回 true，如果包含不可操作的值返回 false
  */
 bool validateTwist(const geometry_msgs::msg::Twist & msg);
 

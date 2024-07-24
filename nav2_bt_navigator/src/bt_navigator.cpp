@@ -103,47 +103,61 @@ BtNavigator::~BtNavigator()
 nav2_util::CallbackReturn
 BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
 {
+  // 输出日志，表示正在配置
   RCLCPP_INFO(get_logger(), "Configuring");
 
-  tf_ = std::make_shared<tf2_ros::Buffer>(get_clock());
+  // 初始化tf2_ros的Buffer，用于处理变换
+  tf_ = std::make_shared<tf2_ros::Buffer>(get_clock()); //get_clock() 是 rclcpp::Node 类的一个方法，用于获取当前节点使用的时钟
+  // 创建tf2_ros的定时器接口
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
     get_node_base_interface(), get_node_timers_interface());
+  // 设置tf的创建定时器接口
   tf_->setCreateTimerInterface(timer_interface);
+  // 设置tf使用专用线程
   tf_->setUsingDedicatedThread(true);
+  // 初始化tf监听器，用于监听坐标变换
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_, this, false);
 
+  // 从参数中获取全局坐标帧、机器人基座坐标帧、变换容忍度和里程计话题名
   global_frame_ = get_parameter("global_frame").as_string();
   robot_frame_ = get_parameter("robot_base_frame").as_string();
   transform_tolerance_ = get_parameter("transform_tolerance").as_double();
   odom_topic_ = get_parameter("odom_topic").as_string();
 
-  // Libraries to pull plugins (BT Nodes) from
+  // 从参数中获取插件库的名称，这些库中包含行为树节点
   auto plugin_lib_names = get_parameter("plugin_lib_names").as_string_array();
 
+  // 初始化导航至特定位姿和通过多个位姿导航的导航器对象
   pose_navigator_ = std::make_unique<nav2_bt_navigator::NavigateToPoseNavigator>();
   poses_navigator_ = std::make_unique<nav2_bt_navigator::NavigateThroughPosesNavigator>();
 
+  // 初始化反馈工具，设置相关的tf和坐标帧信息
   nav2_bt_navigator::FeedbackUtils feedback_utils;
   feedback_utils.tf = tf_;
   feedback_utils.global_frame = global_frame_;
   feedback_utils.robot_frame = robot_frame_;
   feedback_utils.transform_tolerance = transform_tolerance_;
 
-  // Odometry smoother object for getting current speed
+  // 初始化里程计平滑器对象，用于获取当前速度
   odom_smoother_ = std::make_shared<nav2_util::OdomSmoother>(shared_from_this(), 0.3, odom_topic_);
 
+  // 配置导航至特定位姿的导航器
   if (!pose_navigator_->on_configure(
       shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_, odom_smoother_))
   {
+    // 如果配置失败，返回失败状态
     return nav2_util::CallbackReturn::FAILURE;
   }
 
+  // 配置通过多个位姿导航的导航器
   if (!poses_navigator_->on_configure(
       shared_from_this(), plugin_lib_names, feedback_utils, &plugin_muxer_, odom_smoother_))
   {
+    // 如果配置失败，返回失败状态
     return nav2_util::CallbackReturn::FAILURE;
   }
 
+  // 如果配置成功，返回成功状态
   return nav2_util::CallbackReturn::SUCCESS;
 }
 

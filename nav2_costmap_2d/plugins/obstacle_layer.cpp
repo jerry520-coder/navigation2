@@ -201,7 +201,7 @@ void ObstacleLayer::onInitialize()
           global_frame_,
           sensor_frame, tf2::durationFromSec(transform_tolerance))));
 
-    // check if we'll add this buffer to our marking observation buffers
+    // 检查我们是否会将此缓冲区添加到我们的标记观测缓冲区中。check if we'll add this buffer to our marking observation buffers
     if (marking) {
       marking_buffers_.push_back(observation_buffers_.back());
     }
@@ -597,15 +597,20 @@ ObstacleLayer::getClearingObservations(std::vector<Observation> & clearing_obser
 {
   bool current = true;
   // get the clearing observations
+  // 遍历清理缓冲区
   for (unsigned int i = 0; i < clearing_buffers_.size(); ++i) {
     clearing_buffers_[i]->lock();
     clearing_buffers_[i]->getObservations(clearing_observations);
     current = clearing_buffers_[i]->isCurrent() && current;
     clearing_buffers_[i]->unlock();
   }
+  
+ // 将静态清理观测数据插入到结果向量中
   clearing_observations.insert(
     clearing_observations.end(),
     static_clearing_observations_.begin(), static_clearing_observations_.end());
+
+  // 返回观测数据缓冲区是否全部为当前的标志
   return current;
 }
 

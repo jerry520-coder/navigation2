@@ -73,6 +73,14 @@ public:
    * @param max_time Maximum duration smoothing should take
    * @return If smoothing was completed (true) or interrupted by time limit (false)
    */
+
+  /**
+ * @brief 用于平滑给定路径的方法
+ *
+ * @param path 要平滑的路径，输入输出参数
+ * @param max_time 平滑过程应该花费的最大持续时间
+ * @return 如果平滑完成（true）或由于时间限制被中断（false）
+ */
   virtual bool smooth(
     nav_msgs::msg::Path & path,
     const rclcpp::Duration & max_time) = 0;

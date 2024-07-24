@@ -121,6 +121,12 @@ protected:
     * @return plan transformed in the costmap frame and iterator to the first pose of the global
     * plan (for pruning)
     */
+
+   /**
+  * @brief 获取局部代价图尺寸窗口内的全局规划
+  * @param global_pose 机器人位置
+  * @return 在代价图坐标系中转换的规划以及到全局规划第一个位置的迭代器（用于裁剪）
+  */
   std::pair<nav_msgs::msg::Path, PathIterator> getGlobalPlanConsideringBoundsInCostmapFrame(
     const geometry_msgs::msg::PoseStamped & global_pose);
 
@@ -136,6 +142,12 @@ protected:
     * @param robot_pose Robot's current pose to check
     * @return bool If the robot pose is within the set inversion tolerances
     */
+
+   /**
+  * @brief 检查机器人的姿态是否在设定的倒置容忍度内
+  * @param robot_pose 要检查的机器人当前姿态
+  * @return bool 如果机器人的姿态在设定的倒置容忍度内，则返回true
+  */
   bool isWithinInversionTolerances(const geometry_msgs::msg::PoseStamped & robot_pose);
 
   std::string name_;

@@ -55,7 +55,7 @@ namespace nav2_costmap_2d
 
 /**
  * @class RangeSensorLayer
- * @brief Takes in IR/Sonar/similar point measurement sensors and populates in costmap
+ * @brief 接收红外/声纳/类似点测量传感器并在成本图中填充。Takes in IR/Sonar/similar point measurement sensors and populates in costmap
  */
 class RangeSensorLayer : public CostmapLayer
 {

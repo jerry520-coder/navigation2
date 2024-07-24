@@ -32,23 +32,28 @@ void PathFollowCritic::initialize()
   getParam(weight_, "cost_weight", 5.0);
 }
 
-void PathFollowCritic::score(CriticData & data)
+void PathFollowCritic::score(CriticData & data) 
 {
-  if (!enabled_ || data.path.x.shape(0) < 2 ||
-    utils::withinPositionGoalTolerance(threshold_to_consider_, data.state.pose.pose, data.path))
+  // 如果该批评者未启用，路径点少于2个，或者机器人已经在目标位置容忍范围内，则不计算成本
+  if (!enabled_ || data.path.x.shape(0) < 2 || 
+    utils::withinPositionGoalTolerance(threshold_to_consider_, data.state.pose.pose, data.path)) 
   {
     return;
   }
 
+  // 如果未设置，则设置路径最远点
   utils::setPathFurthestPointIfNotSet(data);
+  // 如果未设置，则设置路径成本
   utils::setPathCostsIfNotSet(data, costmap_ros_);
+  // 获取路径点的数量
   const size_t path_size = data.path.x.shape(0) - 1;
 
+  // 计算偏移后的路径点索引，确保不会超出路径点索引范围
   auto offseted_idx = std::min(
     *data.furthest_reached_path_point + offset_from_furthest_, path_size);
 
-  // Drive to the first valid path point, in case of dynamic obstacles on path
-  // we want to drive past it, not through it
+  // 寻找第一个有效的路径点，以应对路径上的动态障碍物
+  // 我们希望越过障碍物，而不是穿过它
   bool valid = false;
   while (!valid && offseted_idx < path_size - 1) {
     valid = (*data.path_pts_valid)[offseted_idx];
@@ -57,16 +62,20 @@ void PathFollowCritic::score(CriticData & data)
     }
   }
 
+  // 获取当前评估的路径点的x和y坐标
   const auto path_x = data.path.x(offseted_idx);
   const auto path_y = data.path.y(offseted_idx);
 
+  // 获取所有轨迹的最最后一个点的x和y坐标
   const auto last_x = xt::view(data.trajectories.x, xt::all(), -1);
   const auto last_y = xt::view(data.trajectories.y, xt::all(), -1);
 
+  // 计算每个轨迹最后一个点到当前评估路径点的距离
   auto dists = xt::sqrt(
     xt::pow(last_x - path_x, 2) +
     xt::pow(last_y - path_y, 2));
 
+  // 将计算出的距离乘以权重并按指数次幂计算，然后累加到总成本中
   data.costs += xt::pow(weight_ * std::move(dists), power_);
 }
 

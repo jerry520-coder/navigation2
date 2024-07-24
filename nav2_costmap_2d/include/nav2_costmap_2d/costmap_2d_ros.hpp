@@ -70,12 +70,15 @@ namespace nav2_costmap_2d
 /** @brief A ROS wrapper for a 2D Costmap. Handles subscribing to
  * topics that provide observations about obstacles in either the form
  * of PointCloud or LaserScan messages. */
+
+/** @brief 一个用于2D代价地图的ROS封装。处理订阅提供障碍物观察信息的topics，
+ * 这些信息可能是以点云(PointCloud)或激光扫描(LaserScan)消息的形式提供的。 */
 class Costmap2DROS : public nav2_util::LifecycleNode
 {
 public:
   /**
    * @brief  Constructor for the wrapper, the node will
-   * be placed in a namespace equal to the node's name
+   * be placed in a namespace equal to the node's name 。节点将被置于与节点名称相同的命名空间中
    * @param name Name of the costmap ROS node
    */
   explicit Costmap2DROS(const std::string & name);
@@ -125,7 +128,8 @@ public:
    * @brief  Subscribes to sensor topics if necessary and starts costmap
    * updates, can be called to restart the costmap after calls to either
    * stop() or pause()
-   */
+   * @note 订阅必要的传感器topics并启动成本地图更新，可以在调用stop()或pause()后调用此方法以重新启动成本地图
+ */
   void start();
 
   /**
@@ -134,7 +138,7 @@ public:
   void stop();
 
   /**
-   * @brief  Stops the costmap from updating, but sensor data still comes in over the wire
+   * @brief  Stops the costmap from updating, but sensor data still comes in over the wire。停止更新成本图，但传感器数据仍然通过网络传入
    */
   void pause();
 
@@ -149,7 +153,7 @@ public:
   void updateMap();
 
   /**
-   * @brief Reset each individual layer
+   * @brief Reset each individual layer。重置每个图层
    */
   void resetLayers();
 
@@ -164,6 +168,12 @@ public:
    * @param global_pose Will be set to the pose of the robot in the global frame of the costmap
    * @return True if the pose was set successfully, false otherwise
    */
+
+  /**
+ * @brief 获取机器人在成本地图全局坐标系中的姿态
+ * @param global_pose 将被设置为机器人在成本地图全局坐标系中的姿态
+ * @return 如果姿态成功设置，则返回true；否则返回false
+ */
   bool getRobotPose(geometry_msgs::msg::PoseStamped & global_pose);
 
   /**
@@ -172,6 +182,13 @@ public:
    * @param transformed_pose pose transformed
    * @return True if the pose was transformed successfully, false otherwise
    */
+
+  /**
+ * @brief 将输入的姿态从成本地图的全局坐标系进行变换
+ * @param input_pose 需要被变换的姿态
+ * @param transformed_pose 变换后的姿态
+ * @return 如果姿态成功变换，则返回true；否则返回false
+ */
   bool transformPoseToGlobalFrame(
     const geometry_msgs::msg::PoseStamped & input_pose,
     geometry_msgs::msg::PoseStamped & transformed_pose);
@@ -238,6 +255,15 @@ public:
    * The footprint initially comes from the rosparam "footprint" but
    * can be overwritten by dynamic reconfigure or by messages received
    * on the "footprint" topic. */
+
+  /**
+ * @brief 返回机器人当前足迹的点集向量。
+ *
+ * 这个版本的足迹由 "footprint_padding" 的 ROS 参数设置的填充距离进行了扩展。
+ *
+ * 最初的足迹来自于 ROS 参数 "footprint"，但可以通过动态重新配置或接收
+ * 在 "footprint" 主题上的消息来进行overwritten。
+ */
   std::vector<geometry_msgs::msg::Point> getRobotFootprint()
   {
     return padded_footprint_;
@@ -250,6 +276,15 @@ public:
    * The footprint initially comes from the rosparam "footprint" but
    * can be overwritten by dynamic reconfigure or by messages received
    * on the "footprint" topic. */
+
+  /**
+ * @brief 返回机器人当前未填充的足迹的点集向量。
+ *
+ * 这是未经填充的原始足迹版本。
+ *
+ * 最初的足迹来自于 ROS 参数 "footprint"，但可以通过动态重新配置或接收
+ * 在 "footprint" 主题上的消息来进行覆盖。
+ */
   std::vector<geometry_msgs::msg::Point> getUnpaddedRobotFootprint()
   {
     return unpadded_footprint_;
@@ -259,6 +294,11 @@ public:
    * @brief  Build the oriented footprint of the robot at the robot's current pose
    * @param  oriented_footprint Will be filled with the points in the oriented footprint of the robot
    */
+
+  /**
+ * @brief 在机器人当前姿态下构建其定向足迹
+ * @param oriented_footprint 将填充机器人定向足迹中的点
+ */
   void getOrientedFootprint(std::vector<geometry_msgs::msg::Point> & oriented_footprint);
 
   /** @brief Set the footprint of the robot to be the given set of
@@ -271,6 +311,17 @@ public:
    * layered_costmap_->setFootprint().  Also saves the unpadded
    * footprint, which is available from
    * getUnpaddedRobotFootprint(). */
+
+
+/**
+ * @brief 将机器人的足迹设置为给定的点集，并增加足迹填充。
+ *
+ * 足迹应该是凸多边形，尽管这一点没有强制要求。
+ *
+ * 首先将给定的多边形通过足迹填充进行扩展，然后设置 padded_footprint_，
+ * 并调用 layered_costmap_->setFootprint()。同时保存未填充的足迹，
+ * 可通过 getUnpaddedRobotFootprint() 获取。
+ */
   void setRobotFootprint(const std::vector<geometry_msgs::msg::Point> & points);
 
   /** @brief Set the footprint of the robot to be the given polygon,
@@ -283,6 +334,16 @@ public:
    * layered_costmap_->setFootprint().  Also saves the unpadded
    * footprint, which is available from
    * getUnpaddedRobotFootprint(). */
+
+  /**
+ * @brief 将机器人的足迹设置为给定的多边形，通过足迹填充进行扩展。
+ *
+ * 足迹应为凸多边形，尽管这一点并未强制执行。
+ *
+ * 首先将给定多边形通过足迹填充参数（footprint_padding_）扩展，然后设置 padded_footprint_，
+ * 并调用 layered_costmap_->setFootprint()。同时也会保存未扩展的足迹，
+ * 可通过 getUnpaddedRobotFootprint() 获取。
+ */
   void setRobotFootprintPolygon(const geometry_msgs::msg::Polygon::SharedPtr footprint);
 
   std::shared_ptr<tf2_ros::Buffer> getTfBuffer() {return tf_buffer_;}
@@ -293,6 +354,12 @@ public:
    * or an arbitrarily defined footprint in footprint_.
    * @return  use_radius_
    */
+
+  /**
+ * @brief 获取成本地图的 use_radius_ 参数，该参数决定机器人的足迹是一个半径为 robot_radius_ 的圆，
+ * 还是在 footprint_ 中定义的任意形状的足迹。
+ * @return use_radius_
+ */
   bool getUseRadius() {return use_radius_;}
 
   /**
@@ -301,6 +368,12 @@ public:
    * (i.e. when use_radius_ == true).
    * @return  robot_radius_
    */
+
+  /**
+ * @brief 获取成本地图的 robot_radius_ 参数，对应于当机器人的足迹被定义为圆形时的半径
+ * （即当 use_radius_ == true 时）。
+ * @return robot_radius_
+ */
   double getRobotRadius() {return robot_radius_;}
 
 protected:
@@ -365,7 +438,7 @@ protected:
   bool track_unknown_space_{false};
   double transform_tolerance_{0};  ///< The timeout before transform errors
 
-  // Derived parameters
+  // Derived（派生） parameters
   bool use_radius_{false};
   std::vector<geometry_msgs::msg::Point> unpadded_footprint_;
   std::vector<geometry_msgs::msg::Point> padded_footprint_;

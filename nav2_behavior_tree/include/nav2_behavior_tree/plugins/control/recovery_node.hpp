@@ -32,49 +32,64 @@ namespace nav2_behavior_tree
  * - If the second child returns FAILURE, this control node will stop the loop and returns FAILURE.
  *
  */
+
+/**
+ * @brief RecoveryNode 只有两个子节点，并且仅当第一个子节点返回 SUCCESS 时才返回 SUCCESS。
+ *
+ * - 如果第一个子节点返回 FAILURE，将会执行第二个子节点。如果第二个子节点返回 SUCCESS，之后将再次执行第一个子节点。
+ *
+ * - 如果第一个或第二个子节点返回 RUNNING，这个控制节点将返回 RUNNING。
+ *
+ * - 如果第二个子节点返回 FAILURE，这个控制节点将停止循环并返回 FAILURE。
+ *
+ */
 class RecoveryNode : public BT::ControlNode
 {
 public:
-  /**
+    /**
    * @brief A constructor for nav2_behavior_tree::RecoveryNode
    * @param name Name for the XML tag for this node
    * @param conf BT node configuration
    */
-  RecoveryNode(
+    RecoveryNode(
     const std::string & name,
     const BT::NodeConfiguration & conf);
 
-  /**
+    /**
    * @brief A destructor for nav2_behavior_tree::RecoveryNode
    */
-  ~RecoveryNode() override = default;
+    ~RecoveryNode() override = default;
 
-  /**
+    /**
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
-  static BT::PortsList providedPorts()
-  {
-    return {
+    static BT::PortsList providedPorts()
+    {
+        return {
       BT::InputPort<int>("number_of_retries", 1, "Number of retries")
     };
-  }
+    }
 
 private:
-  unsigned int current_child_idx_;
-  unsigned int number_of_retries_;
-  unsigned int retry_count_;
+    unsigned int current_child_idx_;
+    unsigned int number_of_retries_;
+    unsigned int retry_count_;
 
-  /**
+    /**
    * @brief The main override required by a BT action
    * @return BT::NodeStatus Status of tick execution
    */
-  BT::NodeStatus tick() override;
+    BT::NodeStatus tick() override;
 
-  /**
+    /**
    * @brief The other (optional) override required by a BT action to reset node state
    */
-  void halt() override;
+
+    /**
+ * @brief 另一个（可选的）由 BT 动作要求的重写方法，用于重置节点状态
+ */
+    void halt() override;
 };
 
 }  // namespace nav2_behavior_tree

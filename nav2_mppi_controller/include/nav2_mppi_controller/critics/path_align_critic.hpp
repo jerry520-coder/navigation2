@@ -29,6 +29,13 @@ namespace mppi::critics
  * difficult (or impossible) to deviate in the presence of dynamic obstacles.
  * This is an important critic to tune and consider in tandem with Obstacle.
  */
+
+/**
+ * @class mppi::critics::ConstraintCritic
+ * @brief 用于路径对齐的批评函数（Critic objective function）。注意：
+ * 如果这个设置较高，将会更精确地遵循路径，但也会使得在遇到动态障碍时偏离路径变得困难（或不可能）。
+ * 这是一个重要的批评函数，需要与障碍物批评函数（Obstacle critic）一起调整和考虑。
+ */
 class PathAlignCritic : public CriticFunction
 {
 public:

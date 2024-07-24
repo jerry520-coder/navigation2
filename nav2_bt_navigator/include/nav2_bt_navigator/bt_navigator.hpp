@@ -58,6 +58,14 @@ protected:
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
+
+  /**
+ * @brief 配置成员变量
+ *
+ * 为"NavigationToPose"初始化action server；订阅"goal_sub"；并从xml文件构建行为树。
+ * @param state 对LifeCycle节点状态的引用
+ * @return SUCCESS 或 FAILURE
+ */
   nav2_util::CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
   /**
    * @brief Activates action server

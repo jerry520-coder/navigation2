@@ -62,26 +62,45 @@ public:
     * @param costmap_ros Costmap2DROS object of environment
     * @param dynamic_parameter_handler Parameter handler object
     */
-  void on_configure(
-    rclcpp_lifecycle::LifecycleNode::WeakPtr parent,
-    const std::string & parent_name,
-    const std::string & name,
-    std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
-    ParametersHandler * param_handler)
-  {
-    parent_ = parent;
-    logger_ = parent_.lock()->get_logger();
-    name_ = name;
-    parent_name_ = parent_name;
-    costmap_ros_ = costmap_ros;
-    costmap_ = costmap_ros_->getCostmap();
-    parameters_handler_ = param_handler;
+/**
+ * @brief 在系统启动时配置批评家
+ * @param parent 父节点的弱指针
+ * @param parent_name 控制器的名称
+ * @param name 插件的名称
+ * @param costmap_ros 环境的 Costmap2DROS 对象
+ * @param param_handler 参数处理器对象
+ */
+void on_configure(
+  rclcpp_lifecycle::LifecycleNode::WeakPtr parent,
+  const std::string & parent_name,
+  const std::string & name,
+  std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros,
+  ParametersHandler * param_handler)
+{
+  // 将父节点的弱指针保存下来
+  parent_ = parent;
 
-    auto getParam = parameters_handler_->getParamGetter(name_);
-    getParam(enabled_, "enabled", true);
+  // 获取父节点的日志器
+  logger_ = parent_.lock()->get_logger();
 
-    initialize();
-  }
+  // 保存插件的名称、父节点名称和环境的 Costmap2DROS 对象
+  name_ = name;
+  parent_name_ = parent_name;
+  costmap_ros_ = costmap_ros;
+  
+  // 获取环境的 Costmap2D 对象
+  costmap_ = costmap_ros_->getCostmap();
+  
+  // 保存参数处理器对象的指针
+  parameters_handler_ = param_handler;
+
+  // 使用参数处理器获取参数，设置是否启用批评家
+  auto getParam = parameters_handler_->getParamGetter(name_);
+  getParam(enabled_, "enabled", true);
+
+  // 调用 initialize() 函数进行批评家的初始化
+  initialize();
+}
 
   /**
     * @brief Main function to score trajectory

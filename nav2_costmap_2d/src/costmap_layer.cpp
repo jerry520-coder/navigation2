@@ -65,16 +65,19 @@ void CostmapLayer::clearArea(int start_x, int start_y, int end_x, int end_y, boo
 {
   current_ = false;
   unsigned char * grid = getCharMap();
+
+   // 遍历代价图中的每个格子
   for (int x = 0; x < static_cast<int>(getSizeInCellsX()); x++) {
-    bool xrange = x > start_x && x < end_x;
+    bool xrange = x > start_x && x < end_x;  // 判断x坐标是否在指定的x范围内
 
     for (int y = 0; y < static_cast<int>(getSizeInCellsY()); y++) {
+      // 判断y坐标是否在指定的y范围内，并结合invert参数决定是否清除当前格子
       if ((xrange && y > start_y && y < end_y) == invert) {
-        continue;
+        continue;// 如果当前格子在操作区域内（或外，取决于invert），则跳过当前循环
       }
-      int index = getIndex(x, y);
-      if (grid[index] != NO_INFORMATION) {
-        grid[index] = NO_INFORMATION;
+      int index = getIndex(x, y);// 计算当前格子在数组中的索引
+      if (grid[index] != NO_INFORMATION) { // 如果当前格子的信息不是NO_INFORMATION
+        grid[index] = NO_INFORMATION; // 将当前格子设置为无信息状态
       }
     }
   }
@@ -141,22 +144,25 @@ void CostmapLayer::updateWithTrueOverwrite(
   int max_i,
   int max_j)
 {
+  // 如果图层未启用，直接返回
   if (!enabled_) {
     return;
   }
 
+ // 如果costmap_未初始化，抛出异常
   if (costmap_ == nullptr) {
     throw std::runtime_error("Can't update costmap layer: It has't been initialized yet!");
   }
 
-  unsigned char * master = master_grid.getCharMap();
-  unsigned int span = master_grid.getSizeInCellsX();
+  unsigned char * master = master_grid.getCharMap();// 获取master_grid的字符地图
+  unsigned int span = master_grid.getSizeInCellsX(); // 获取master_grid在x方向上的单元格数量
 
+// 遍历指定的更新范围
   for (int j = min_j; j < max_j; j++) {
     unsigned int it = span * j + min_i;
-    for (int i = min_i; i < max_i; i++) {
+    for (int i = min_i; i < max_i; i++) { // 将当前图层的代价值覆盖到master_grid中
       master[it] = costmap_[it];
-      it++;
+      it++;// 移动到下一列
     }
   }
 }

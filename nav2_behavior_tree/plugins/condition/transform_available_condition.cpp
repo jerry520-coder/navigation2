@@ -39,7 +39,7 @@ TransformAvailableCondition::TransformAvailableCondition(
     RCLCPP_FATAL(
       node_->get_logger(), "Child frame (%s) or parent frame (%s) were empty.",
       child_frame_.c_str(), parent_frame_.c_str());
-    exit(-1);
+    exit(-1); //表示程序退出时返回的错误码，通常用来表示程序异常终止或遇到严重错误。
   }
 
   RCLCPP_DEBUG(node_->get_logger(), "Initialized an TransformAvailableCondition BT node");

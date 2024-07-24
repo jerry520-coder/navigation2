@@ -111,6 +111,20 @@ public:
    * @param goal_checker Pointer to the current goal checker the task is utilizing
    * @return The best command for the robot to drive
    */
+
+  /**
+ * @brief Controller computeVelocityCommands - 计算给定当前姿态和速度的最佳指令
+ *
+ * 假定全局路径已经设置。
+ *
+ * 这主要是一个对受保护的 computeVelocityCommands 函数的包装器，
+ * 该函数提供了额外的调试信息。
+ *
+ * @param pose 当前机器人姿态
+ * @param velocity 当前机器人速度
+ * @param goal_checker 任务当前使用的目标检查器的指针
+ * @return 驱动机器人的最佳指令
+ */
   virtual geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & pose,
     const geometry_msgs::msg::Twist & velocity,

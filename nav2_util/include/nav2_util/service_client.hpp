@@ -26,6 +26,11 @@ namespace nav2_util
  * @class nav2_util::ServiceClient
  * @brief A simple wrapper on ROS2 services for invoke() and block-style calling
  */
+
+/**
+ * @class nav2_util::ServiceClient
+ * @brief 一个简单的ROS2服务包装器，用于invoke()和阻塞式调用
+ */
 template<class ServiceT>
 class ServiceClient
 {
@@ -35,6 +40,12 @@ public:
   * @param service_name name of the service to call
   * @param provided_node Node to create the service client off of
   */
+
+ /**
+ * @brief 构造函数
+ * @param service_name 要调用的服务的名称
+ * @param provided_node 用于创建服务客户端的节点
+ */
   explicit ServiceClient(
     const std::string & service_name,
     const rclcpp::Node::SharedPtr & provided_node)
@@ -59,6 +70,14 @@ public:
   * @param timeout Maximum timeout to wait for, default infinite
   * @return Response A pointer to the service response from the request
   */
+
+ /**
+ * @brief 调用服务并阻塞，直到完成或超时
+ * @param request 用于调用服务的请求对象
+ * @param timeout 等待的最大超时时间，默认为无限
+ * @return Response 指向请求服务响应的指针
+//  *  -1 通常用来表示一个无限期的超时或者一个特殊的时间点。
+ */
   typename ResponseType::SharedPtr invoke(
     typename RequestType::SharedPtr & request,
     const std::chrono::nanoseconds timeout = std::chrono::nanoseconds(-1))
@@ -95,6 +114,13 @@ public:
   * @param Response A pointer to the service response from the request
   * @return bool Whether it was successfully called
   */
+
+ /**
+ * @brief 调用服务并阻塞，直到完成
+ * @param request 用于调用服务的请求对象
+ * @param Response 从请求中得到的服务响应的指针
+ * @return bool 是否成功调用
+ */
   bool invoke(
     typename RequestType::SharedPtr & request,
     typename ResponseType::SharedPtr & response)
@@ -131,6 +157,12 @@ public:
   * @param timeout Maximum timeout to wait for, default infinite
   * @return bool true if service is available
   */
+
+ /**
+ * @brief 阻塞直到服务可用或超时
+ * @param timeout 等待的最大超时时间，默认为无限
+ * @return bool 如果服务可用，则返回true
+ */
   bool wait_for_service(const std::chrono::nanoseconds timeout = std::chrono::nanoseconds::max())
   {
     return client_->wait_for_service(timeout);

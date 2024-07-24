@@ -52,6 +52,12 @@ public:
    * @param node Weakptr to the lifecycle node
    * @param odom_smoother Object to get current smoothed robot's speed
    */
+
+  /**
+ * @brief 配置状态转换以配置导航器的状态
+ * @param node 指向生命周期节点的弱指针
+ * @param odom_smoother 用于获取当前平滑机器人速度的对象
+ */
   bool configure(
     rclcpp_lifecycle::LifecycleNode::WeakPtr node,
     std::shared_ptr<nav2_util::OdomSmoother> odom_smoother) override;
@@ -66,6 +72,11 @@ public:
    * from rviz
    * @param pose Pose received via atopic
    */
+
+  /**
+ * @brief 订阅并回调处理从 rviz 发布的topic-based的目标
+ * @param pose 通过atopic接收的姿态
+ */
   void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
 
   /**
@@ -79,6 +90,12 @@ public:
    * @param node WeakPtr to the lifecycle node
    * @return string Filepath to default XML
    */
+
+  /**
+ * @brief 获取导航器的默认 BT
+ * @param node 指向生命周期节点的弱指针
+ * @return string 默认 XML 文件的路径
+ */
   std::string getDefaultBTFilepath(rclcpp_lifecycle::LifecycleNode::WeakPtr node) override;
 
 protected:
@@ -89,17 +106,33 @@ protected:
    * @param goal Action template's goal message
    * @return bool if goal was received successfully to be processed
    */
+
+  /**
+ * @brief 当 BT action server接收到一个新目标时要调用的回调函数
+ * 可用于检查目标是否有效，并将依赖于接收到的目标的值放在blackboard上
+ * @param goal 动作模板的目标消息
+ * @return bool 如果目标成功接收并准备处理
+ */
   bool goalReceived(ActionT::Goal::ConstSharedPtr goal) override;
 
   /**
    * @brief A callback that defines execution that happens on one iteration through the BT
    * Can be used to publish action feedback
    */
+
+  /**
+ * @brief 一个回调，定义了在 BT 迭代中发生的一次执行
+ * 可用于发布action feedback
+ */
   void onLoop() override;
 
   /**
    * @brief A callback that is called when a preempt is requested
    */
+
+  /**
+ * @brief 当请求抢占时调用的回调
+ */
   void onPreempt(ActionT::Goal::ConstSharedPtr goal) override;
 
   /**
@@ -109,6 +142,12 @@ protected:
    * @param final_bt_status Resulting status of the behavior tree execution that may be
    * referenced while populating the result.
    */
+
+  /**
+ * @brief 当动作完成时调用的回调，可以填充action result message或表明此动作已完成。
+ * @param result 用于填充的Action template result message
+ * @param final_bt_status 行为树执行的最终状态，可以在填充结果时参考
+ */
   void goalCompleted(
     typename ActionT::Result::SharedPtr result,
     const nav2_behavior_tree::BtStatus final_bt_status) override;
@@ -117,6 +156,11 @@ protected:
    * @brief Goal pose initialization on the blackboard
    * @param goal Action template's goal message to process
    */
+
+  /**
+ * @brief 在blackboard上初始化目标姿态
+ * @param goal 要处理的Action template's goal message
+ */
   void initializeGoalPose(ActionT::Goal::ConstSharedPtr goal);
 
   rclcpp::Time start_time_;

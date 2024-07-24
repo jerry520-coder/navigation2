@@ -50,6 +50,13 @@ public:
    * @param parent parent node that plugin will be created within(for an example see nav_waypoint_follower)
    * @param plugin_name plugin name comes from parameters in yaml file
    */
+
+  /**
+ * @brief 重写此方法以设置您在插件中将使用的发布者、订阅者或任何ROS服务。
+ *
+ * @param parent 插件将在其中创建的父节点（例如，参见nav_waypoint_follower）
+ * @param plugin_name 插件名称来自yaml文件中的参数
+ */
   virtual void initialize(
     const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
     const std::string & plugin_name) = 0;
@@ -62,6 +69,15 @@ public:
    * @return true if task execution was successful
    * @return false if task execution failed
    */
+
+  /**
+ * @brief 重写此方法以定义您希望在机器人到达航点后执行的任务的主体
+ *
+ * @param curr_pose 机器人的当前姿态
+ * @param curr_waypoint_index 机器人刚刚到达的当前航点
+ * @return 如果任务执行成功，则返回true
+ * @return 如果任务执行失败，则返回false
+ */
   virtual bool processAtWaypoint(
     const geometry_msgs::msg::PoseStamped & curr_pose, const int & curr_waypoint_index) = 0;
 };

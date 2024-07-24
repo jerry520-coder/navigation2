@@ -56,7 +56,6 @@ class TimedBehavior : public nav2_core::Behavior
 {
 public:
   using ActionServer = nav2_util::SimpleActionServer<ActionT>;
-
   /**
    * @brief A TimedBehavior constructor
    */

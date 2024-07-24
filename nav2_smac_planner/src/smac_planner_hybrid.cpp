@@ -51,7 +51,7 @@ void SmacPlannerHybrid::configure(
   std::string name, std::shared_ptr<tf2_ros::Buffer>/*tf*/,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
-  _node = parent;
+  _node = parent;  // 保存父节点的弱引用
   auto node = parent.lock();
   _logger = node->get_logger();
   _clock = node->get_clock();
@@ -63,8 +63,8 @@ void SmacPlannerHybrid::configure(
   RCLCPP_INFO(_logger, "Configuring %s of type SmacPlannerHybrid", name.c_str());
 
   int angle_quantizations;
-  double analytic_expansion_max_length_m;
-  bool smooth_path;
+  double analytic_expansion_max_length_m; // 分析扩展的最大长度（米）
+  bool smooth_path; // 是否平滑路径
 
   // General planner params
   nav2_util::declare_parameter_if_not_declared(
@@ -83,6 +83,7 @@ void SmacPlannerHybrid::configure(
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".tolerance", rclcpp::ParameterValue(0.25));
   _tolerance = static_cast<float>(node->get_parameter(name + ".tolerance").as_double());
+
   nav2_util::declare_parameter_if_not_declared(
     node, name + ".allow_unknown", rclcpp::ParameterValue(true));
   node->get_parameter(name + ".allow_unknown", _allow_unknown);
@@ -137,6 +138,8 @@ void SmacPlannerHybrid::configure(
     node, name + ".motion_model_for_search", rclcpp::ParameterValue(std::string("DUBIN")));
   node->get_parameter(name + ".motion_model_for_search", _motion_model_for_search);
   _motion_model = fromString(_motion_model_for_search);
+
+// 如果运动模型是未知的
   if (_motion_model == MotionModel::UNKNOWN) {
     RCLCPP_WARN(
       _logger,
@@ -145,6 +148,7 @@ void SmacPlannerHybrid::configure(
       _motion_model_for_search.c_str());
   }
 
+// 如果接近目标时的最大迭代次数设置为小于等于0
   if (_max_on_approach_iterations <= 0) {
     RCLCPP_INFO(
       _logger, "On approach iteration selected as <= 0, "
@@ -152,6 +156,7 @@ void SmacPlannerHybrid::configure(
     _max_on_approach_iterations = std::numeric_limits<int>::max();
   }
 
+// 如果最大迭代次数设置为小于等于0
   if (_max_iterations <= 0) {
     RCLCPP_INFO(
       _logger, "maximum iteration selected as <= 0, "
@@ -160,20 +165,26 @@ void SmacPlannerHybrid::configure(
   }
 
   // convert to grid coordinates
+  // 如果没有开启成本地图降采样
   if (!_downsample_costmap) {
     _downsampling_factor = 1;
   }
+
+  // 计算最小转弯半径（在网格坐标中）
   _search_info.minimum_turning_radius =
     _minimum_turning_radius_global_coords / (_costmap->getResolution() * _downsampling_factor);
+
+  // 计算启发式查找表的维度
   _lookup_table_dim =
     static_cast<float>(_lookup_table_size) /
     static_cast<float>(_costmap->getResolution() * _downsampling_factor);
 
-  // Make sure its a whole number
+  // Make sure its a whole number。确保查找表维度是整数
   _lookup_table_dim = static_cast<float>(static_cast<int>(_lookup_table_dim));
 
-  // Make sure its an odd number
+  // Make sure its an odd number。如果查找表维度是偶数
   if (static_cast<int>(_lookup_table_dim) % 2 == 0) {
+     // 输出信息日志，并将查找表维度增加1，以确保其为奇数
     RCLCPP_INFO(
       _logger,
       "Even sized heuristic lookup table size set %f, increasing size by 1 to make odd",
@@ -181,14 +192,16 @@ void SmacPlannerHybrid::configure(
     _lookup_table_dim += 1.0;
   }
 
-  // Initialize collision checker
+  // Initialize collision checker。 初始化碰撞检查器
   _collision_checker = GridCollisionChecker(_costmap, _angle_quantizations, node);
+
+  // 设置碰撞检查器的足迹参数
   _collision_checker.setFootprint(
     _costmap_ros->getRobotFootprint(),
     _costmap_ros->getUseRadius(),
     findCircumscribedCost(_costmap_ros));
 
-  // Initialize A* template
+  // Initialize A* template。初始化A*算法模板
   _a_star = std::make_unique<AStarAlgorithm<NodeHybrid>>(_motion_model, _search_info);
   _a_star->initialize(
     _allow_unknown,
@@ -199,14 +212,16 @@ void SmacPlannerHybrid::configure(
     _angle_quantizations);
 
   // Initialize path smoother
+  // 如果需要平滑路径
   if (smooth_path) {
     SmootherParams params;
     params.get(node, name);
-    _smoother = std::make_unique<Smoother>(params);
+    _smoother = std::make_unique<Smoother>(params); // 初始化路径平滑器
     _smoother->initialize(_minimum_turning_radius_global_coords);
   }
 
   // Initialize costmap downsampler
+  // 如果开启了成本地图降采样
   if (_downsample_costmap && _downsampling_factor > 1) {
     _costmap_downsampler = std::make_unique<CostmapDownsampler>();
     std::string topic_name = "downsampled_costmap";
@@ -214,14 +229,16 @@ void SmacPlannerHybrid::configure(
       node, _global_frame, topic_name, _costmap, _downsampling_factor);
   }
 
+// 创建未平滑路径的发布者
   _raw_plan_publisher = node->create_publisher<nav_msgs::msg::Path>("unsmoothed_plan", 1);
 
+// 输出配置完成的日志信息
   RCLCPP_INFO(
     _logger, "Configured plugin %s of type SmacPlannerHybrid with "
     "maximum iterations %i, max on approach iterations %i, and %s. Tolerance %.2f."
     "Using motion model: %s.",
     _name.c_str(), _max_iterations, _max_on_approach_iterations,
-    _allow_unknown ? "allowing unknown traversal" : "not allowing unknown traversal",
+    _allow_unknown ? "allowing unknown traversal" : "not allowing unknown traversal",// 是否允许穿过未知区域
     _tolerance, toString(_motion_model).c_str());
 }
 
@@ -270,12 +287,13 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
 {
-  std::lock_guard<std::mutex> lock_reinit(_mutex);
-  steady_clock::time_point a = steady_clock::now();
+  std::lock_guard<std::mutex> lock_reinit(_mutex);// 互斥锁保护，确保在动态参数初始化时不会发生冲突
+  steady_clock::time_point a = steady_clock::now();// 记录开始规划的时间点
 
-  std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(_costmap->getMutex()));
+  std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> lock(*(_costmap->getMutex()));  // 为成本地图的互斥锁创建一个独占锁
 
   // Downsample costmap, if required
+// 如果需要降采样成本地图，则进行降采样，并更新碰撞检查器使用的成本地图
   nav2_costmap_2d::Costmap2D * costmap = _costmap;
   if (_costmap_downsampler) {
     costmap = _costmap_downsampler->downsample(_downsampling_factor);
@@ -283,23 +301,27 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   }
 
   // Set collision checker and costmap information
-  _a_star->setCollisionChecker(&_collision_checker);
+  _a_star->setCollisionChecker(&_collision_checker); // 设置碰撞检查器
 
   // Set starting point, in A* bin search coordinates
+   // 将起始点的世界坐标转换为成本地图上的网格坐标
   unsigned int mx, my;
   costmap->worldToMap(start.pose.position.x, start.pose.position.y, mx, my);
   double orientation_bin = tf2::getYaw(start.pose.orientation) / _angle_bin_size;
+   // 角度标准化处理
   while (orientation_bin < 0.0) {
     orientation_bin += static_cast<float>(_angle_quantizations);
   }
+
   // This is needed to handle precision issues
   if (orientation_bin >= static_cast<float>(_angle_quantizations)) {
     orientation_bin -= static_cast<float>(_angle_quantizations);
   }
   unsigned int orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
-  _a_star->setStart(mx, my, orientation_bin_id);
+  _a_star->setStart(mx, my, orientation_bin_id); //Set the starting pose for planning, as a node index
 
   // Set goal point, in A* bin search coordinates
+  // 将终点的世界坐标转换为成本地图上的网格坐标
   costmap->worldToMap(goal.pose.position.x, goal.pose.position.y, mx, my);
   orientation_bin = tf2::getYaw(goal.pose.orientation) / _angle_bin_size;
   while (orientation_bin < 0.0) {
@@ -310,7 +332,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     orientation_bin -= static_cast<float>(_angle_quantizations);
   }
   orientation_bin_id = static_cast<unsigned int>(floor(orientation_bin));
-  _a_star->setGoal(mx, my, orientation_bin_id);
+  _a_star->setGoal(mx, my, orientation_bin_id); //Set the goal for planning, as a node index
 
   // Setup message
   nav_msgs::msg::Path plan;
@@ -324,7 +346,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   pose.pose.orientation.z = 0.0;
   pose.pose.orientation.w = 1.0;
 
-  // Compute plan
+  // Compute plan。尝试生成路径
   NodeHybrid::CoordinateVector path;
   int num_iterations = 0;
   std::string error;
@@ -333,9 +355,9 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
         path, num_iterations, _tolerance / static_cast<float>(costmap->getResolution())))
     {
       if (num_iterations < _a_star->getMaxIterations()) {
-        error = std::string("no valid path found");
+        error = std::string("no valid path found"); // 未找到有效路径
       } else {
-        error = std::string("exceeded maximum iterations");
+        error = std::string("exceeded maximum iterations");// 超出最大迭代次数
       }
     }
   } catch (const std::runtime_error & e) {
@@ -343,6 +365,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
     error += e.what();
   }
 
+// 如果发生错误，记录警告日志并返回空路径
   if (!error.empty()) {
     RCLCPP_WARN(
       _logger,
@@ -352,6 +375,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   }
 
   // Convert to world coordinates
+  // 将路径坐标转换回世界坐标，并存入路径消息
   plan.poses.reserve(path.size());
   for (int i = path.size() - 1; i >= 0; --i) {
     pose.pose = getWorldCoords(path[i].x, path[i].y, costmap);
@@ -360,11 +384,13 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
   }
 
   // Publish raw path for debug
+  // 如果有订阅者，发布未平滑的路径用于调试
   if (_raw_plan_publisher->get_subscription_count() > 0) {
     _raw_plan_publisher->publish(plan);
   }
 
   // Find how much time we have left to do smoothing
+  // 计算剩余可用于路径平滑的时间
   steady_clock::time_point b = steady_clock::now();
   duration<double> time_span = duration_cast<duration<double>>(b - a);
   double time_remaining = _max_planning_time - static_cast<double>(time_span.count());
@@ -375,6 +401,7 @@ nav_msgs::msg::Path SmacPlannerHybrid::createPlan(
 #endif
 
   // Smooth plan
+  // 如果有必要，进行路径平滑处理
   if (_smoother && num_iterations > 1) {
     _smoother->smooth(plan, costmap, time_remaining);
   }

@@ -23,7 +23,7 @@ namespace mppi::models
 
 /**
  * @class mppi::models::Trajectories
- * @brief Candidate Trajectories
+ * @brief Candidate Trajectories。x/y/yaws
  */
 struct Trajectories
 {

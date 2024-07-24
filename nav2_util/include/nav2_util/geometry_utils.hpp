@@ -167,6 +167,13 @@ inline Iter first_after_integrated_distance(Iter begin, Iter end, Getter getComp
  * subset of the path.
  * @return double Path length
  */
+
+/**
+ * @brief 计算从提供的索引开始的给定路径的长度
+ * @param path 包含规划路径的位姿的路径
+ * @param start_index 可选参数，指定计算路径长度的起始索引。如果你想计算路径的一部分的长度，可以提供此参数。
+ * @return double 路径长度
+ */
 inline double calculate_path_length(const nav_msgs::msg::Path & path, size_t start_index = 0)
 {
   if (start_index + 1 >= path.poses.size()) {

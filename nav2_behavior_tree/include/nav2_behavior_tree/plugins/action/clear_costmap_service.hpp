@@ -80,7 +80,7 @@ public:
       {
         BT::InputPort<double>(
           "reset_distance", 1,
-          "Distance from the robot above which obstacles are cleared")
+          "Distance from the robot above which obstacles are cleared") //清除障碍物时与机器人的距离
       });
   }
 };

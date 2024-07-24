@@ -72,11 +72,11 @@ StaticLayer::onInitialize()
 
   getParameters();
 
-  rclcpp::QoS map_qos(10);  // initialize to default
+  rclcpp::QoS map_qos(10);  // initialize to default。默认队列长度为10
   if (map_subscribe_transient_local_) {
-    map_qos.transient_local();
-    map_qos.reliable();
-    map_qos.keep_last(1);
+    map_qos.transient_local();// 设置QoS为瞬态局部模式
+    map_qos.reliable();// 设置QoS为可靠模式
+    map_qos.keep_last(1);// 仅保留最后一个消息
   }
 
   RCLCPP_INFO(
@@ -94,6 +94,7 @@ StaticLayer::onInitialize()
     map_topic_, map_qos,
     std::bind(&StaticLayer::incomingMap, this, std::placeholders::_1));
 
+// 如果需要订阅地图更新
   if (subscribe_to_updates_) {
     RCLCPP_INFO(logger_, "Subscribing to updates");
     map_update_sub_ = node->create_subscription<map_msgs::msg::OccupancyGridUpdate>(
@@ -180,6 +181,7 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
   unsigned int size_x = new_map.info.width;
   unsigned int size_y = new_map.info.height;
 
+ // 显示接收到的地图尺寸和分辨率
   RCLCPP_DEBUG(
     logger_,
     "StaticLayer: Received a %d X %d map at %f m/pix", size_x, size_y,
@@ -192,28 +194,31 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
     master->getResolution() != new_map.info.resolution ||
     master->getOriginX() != new_map.info.origin.position.x ||
     master->getOriginY() != new_map.info.origin.position.y ||
-    !layered_costmap_->isSizeLocked()))
+    !layered_costmap_->isSizeLocked()))  // 如果地图的尺寸、分辨率或原点不匹配，调整代价地图的大小
   {
-    // Update the size of the layered costmap (and all layers, including this one)
+    // Update the size of the layered costmap (and all layers, including this one) // 更新层代价地图的大小（包括此层）
     RCLCPP_INFO(
       logger_,
       "StaticLayer: Resizing costmap to %d X %d at %f m/pix", size_x, size_y,
       new_map.info.resolution);
+
     layered_costmap_->resizeMap(
       size_x, size_y, new_map.info.resolution,
       new_map.info.origin.position.x,
       new_map.info.origin.position.y,
       true);
+
   } else if (size_x_ != size_x || size_y_ != size_y ||  // NOLINT
     resolution_ != new_map.info.resolution ||
     origin_x_ != new_map.info.origin.position.x ||
     origin_y_ != new_map.info.origin.position.y)
   {
-    // only update the size of the costmap stored locally in this layer
+    // only update the size of the costmap stored locally in this layer // 仅更新此层代价地图的大小 
     RCLCPP_INFO(
       logger_,
       "StaticLayer: Resizing static layer to %d X %d at %f m/pix", size_x, size_y,
       new_map.info.resolution);
+
     resizeMap(
       size_x, size_y, new_map.info.resolution,
       new_map.info.origin.position.x, new_map.info.origin.position.y);
@@ -221,10 +226,10 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
 
   unsigned int index = 0;
 
-  // we have a new map, update full size of map
+  // we have a new map, update full size of map // 更新整张地图
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
 
-  // initialize the costmap with static data
+  // initialize the costmap with static data // 用静态数据初始化代价地图
   for (unsigned int i = 0; i < size_y; ++i) {
     for (unsigned int j = 0; j < size_x; ++j) {
       unsigned char value = new_map.data[index];
@@ -238,9 +243,9 @@ StaticLayer::processMap(const nav_msgs::msg::OccupancyGrid & new_map)
   x_ = y_ = 0;
   width_ = size_x_;
   height_ = size_y_;
-  has_updated_data_ = true;
+  has_updated_data_ = true; // 标记数据已更新
 
-  current_ = true;
+  current_ = true; // 标记地图当前有效
 }
 
 void
@@ -248,6 +253,7 @@ StaticLayer::matchSize()
 {
   // If we are using rolling costmap, the static map size is
   //   unrelated to the size of the layered costmap
+  // 如果我们使用滚动成本图，则静态地图大小为与分层costmap的大小无关
   if (!layered_costmap_->isRolling()) {
     Costmap2D * master = layered_costmap_->getCostmap();
     resizeMap(
@@ -259,7 +265,7 @@ StaticLayer::matchSize()
 unsigned char
 StaticLayer::interpretValue(unsigned char value)
 {
-  // check if the static value is above the unknown or lethal thresholds
+  // check if the static value is above the unknown or lethal thresholds // 检查静态值是否超过未知或致命阈值
   if (track_unknown_space_ && value == unknown_cost_value_) {
     return NO_INFORMATION;
   } else if (!track_unknown_space_ && value == unknown_cost_value_) {
@@ -295,6 +301,7 @@ StaticLayer::incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr u
     update->x < static_cast<int32_t>(x_) ||
     x_ + width_ < update->x + update->width)
   {
+    // 更新超出静态层边界，打印警告信息并返回
     RCLCPP_WARN(
       logger_,
       "StaticLayer: Map update ignored. Exceeds bounds of static layer.\n"
@@ -306,6 +313,7 @@ StaticLayer::incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr u
   }
 
   if (update->header.frame_id != map_frame_) {
+     // 更新的帧ID与当前地图帧ID不匹配，打印警告信息
     RCLCPP_WARN(
       logger_,
       "StaticLayer: Map update ignored. Current map is in frame %s "
@@ -313,6 +321,7 @@ StaticLayer::incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr u
       map_frame_.c_str(), update->header.frame_id.c_str());
   }
 
+  // 处理接收到的地图更新数据，并更新代价地图。
   unsigned int di = 0;
   for (unsigned int y = 0; y < update->height; y++) {
     unsigned int index_base = (update->y + y) * size_x_;
@@ -322,7 +331,7 @@ StaticLayer::incomingUpdate(map_msgs::msg::OccupancyGridUpdate::ConstSharedPtr u
     }
   }
 
-  has_updated_data_ = true;
+  has_updated_data_ = true;// 标记数据已更新
 }
 
 
@@ -333,6 +342,7 @@ StaticLayer::updateBounds(
   double * max_x,
   double * max_y)
 {
+  // 如果地图没有接收到，更新标志位并返回
   if (!map_received_) {
     map_received_in_update_bounds_ = false;
     return;
@@ -341,31 +351,35 @@ StaticLayer::updateBounds(
 
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
 
-  // If there is a new available map, load it.
+  // If there is a new available map, load it. // 如果有新地图可用，加载它
   if (map_buffer_) {
     processMap(*map_buffer_);
     map_buffer_ = nullptr;
   }
 
+ // 如果分层代价地图不是滚动的，并且没有更新数据或额外边界，则直接返回
   if (!layered_costmap_->isRolling() ) {
     if (!(has_updated_data_ || has_extra_bounds_)) {
       return;
     }
   }
 
+ // 使用额外的边界信息更新最小和最大边界
   useExtraBounds(min_x, min_y, max_x, max_y);
 
   double wx, wy;
 
+   // 将地图坐标 (x_, y_) 转换为世界坐标，并更新最小边界
   mapToWorld(x_, y_, wx, wy);
   *min_x = std::min(wx, *min_x);
   *min_y = std::min(wy, *min_y);
 
+// 将地图坐标 (x_ + width_, y_ + height_) 转换为世界坐标，并更新最大边界
   mapToWorld(x_ + width_, y_ + height_, wx, wy);
   *max_x = std::max(wx, *max_x);
   *max_y = std::max(wy, *max_y);
 
-  has_updated_data_ = false;
+  has_updated_data_ = false; // 更新数据处理完成，重置更新标志位
 }
 
 void
@@ -374,12 +388,16 @@ StaticLayer::updateCosts(
   int min_i, int min_j, int max_i, int max_j)
 {
   std::lock_guard<Costmap2D::mutex_t> guard(*getMutex());
+
+  // 如果图层未启用，直接返回
   if (!enabled_) {
     return;
   }
+
+  // 如果在更新边界时没有接收到地图，输出警告信息并返回
   if (!map_received_in_update_bounds_) {
     static int count = 0;
-    // throttle warning down to only 1/10 message rate
+    // throttle warning down to only 1/10 message rate // 每10次输出一次警告信息
     if (++count == 10) {
       RCLCPP_WARN(logger_, "Can't update static costmap layer, no map received");
       count = 0;
@@ -387,20 +405,22 @@ StaticLayer::updateCosts(
     return;
   }
 
+  // 如果地图不是滚动的
   if (!layered_costmap_->isRolling()) {
-    // if not rolling, the layered costmap (master_grid) has same coordinates as this layer
+    // if not rolling, the layered costmap (master_grid) has same coordinates as this layer // 分层代价地图(master_grid)的坐标与此图层相同
     if (!use_maximum_) {
-      updateWithTrueOverwrite(master_grid, min_i, min_j, max_i, max_j);
+      updateWithTrueOverwrite(master_grid, min_i, min_j, max_i, max_j); // 使用真实覆盖更新代价
     } else {
-      updateWithMax(master_grid, min_i, min_j, max_i, max_j);
+      updateWithMax(master_grid, min_i, min_j, max_i, max_j);// 使用最大值更新代价
     }
   } else {
-    // If rolling window, the master_grid is unlikely to have same coordinates as this layer
+    // If rolling window, the master_grid is unlikely to have same coordinates as this layer // 如果是滚动窗口，master_grid的坐标可能与此图层不同
     unsigned int mx, my;
     double wx, wy;
-    // Might even be in a different frame
+    // Might even be in a different frame // 可能甚至是在不同的坐标框架中
     geometry_msgs::msg::TransformStamped transform;
     try {
+       // 查找从global_frame_到map_frame_的转换
       transform = tf_->lookupTransform(
         map_frame_, global_frame_, tf2::TimePointZero,
         transform_tolerance_);
@@ -408,18 +428,20 @@ StaticLayer::updateCosts(
       RCLCPP_ERROR(logger_, "StaticLayer: %s", ex.what());
       return;
     }
-    // Copy map data given proper transformations
+    // Copy map data given proper transformations // 复制地图数据并进行适当的转换
     tf2::Transform tf2_transform;
     tf2::fromMsg(transform.transform, tf2_transform);
 
+  // 遍历更新边界内的所有单元格
     for (int i = min_i; i < max_i; ++i) {
       for (int j = min_j; j < max_j; ++j) {
         // Convert master_grid coordinates (i,j) into global_frame_(wx,wy) coordinates
+        // 将master_grid的坐标(i,j)转换为global_frame_的世界坐标(wx,wy)
         layered_costmap_->getCostmap()->mapToWorld(i, j, wx, wy);
-        // Transform from global_frame_ to map_frame_
+        // Transform from global_frame_ to map_frame_ // 从global_frame_转换到map_frame_
         tf2::Vector3 p(wx, wy, 0);
         p = tf2_transform * p;
-        // Set master_grid with cell from map
+        // Set master_grid with cell from map // 将地图中的单元格设置到master_grid中
         if (worldToMap(p.x(), p.y(), mx, my)) {
           if (!use_maximum_) {
             master_grid.setCost(i, j, getCost(mx, my));
@@ -430,7 +452,7 @@ StaticLayer::updateCosts(
       }
     }
   }
-  current_ = true;
+  current_ = true;// 标记当前图层数据为最新
 }
 
 /**

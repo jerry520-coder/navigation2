@@ -100,18 +100,23 @@ NavigateThroughPosesNavigator::onLoop()
 
   // action server feedback (pose, duration of task,
   // number of recoveries, and distance remaining to goal, etc)
+  // 初始化一个用于反馈信息的消息对象
   auto feedback_msg = std::make_shared<ActionT::Feedback>();
 
+  // 获取黑板（Blackboard），黑板用于存储和共享行为树节点间的信息
   auto blackboard = bt_action_server_->getBlackboard();
 
+  // 从黑板中获取目标位置列表
   Goals goal_poses;
   blackboard->get<Goals>(goals_blackboard_id_, goal_poses);
 
+  // 如果目标位置列表为空，则发布当前的反馈信息并返回
   if (goal_poses.size() == 0) {
     bt_action_server_->publishFeedback(feedback_msg);
     return;
   }
 
+  // 获取当前的机器人位置
   geometry_msgs::msg::PoseStamped current_pose;
   nav2_util::getCurrentPose(
     current_pose, *feedback_utils_.tf,
@@ -119,11 +124,11 @@ NavigateThroughPosesNavigator::onLoop()
     feedback_utils_.transform_tolerance);
 
   try {
-    // Get current path points
+    // 从黑板中获取当前路径
     nav_msgs::msg::Path current_path;
     blackboard->get<nav_msgs::msg::Path>(path_blackboard_id_, current_path);
 
-    // Find the closest pose to current pose on global path
+    // 找到当前路径上距离当前位置最近的路径点
     auto find_closest_pose_idx =
       [&current_pose, &current_path]() {
         size_t closest_pose_idx = 0;
@@ -139,35 +144,38 @@ NavigateThroughPosesNavigator::onLoop()
         return closest_pose_idx;
       };
 
-    // Calculate distance on the path
+    // 计算从最近的路径点到路径终点的剩余距离
     double distance_remaining =
       nav2_util::geometry_utils::calculate_path_length(current_path, find_closest_pose_idx());
 
-    // Default value for time remaining
+    // 初始化预计剩余时间的默认值
     rclcpp::Duration estimated_time_remaining = rclcpp::Duration::from_seconds(0.0);
 
-    // Get current speed
+    // 获取当前速度
     geometry_msgs::msg::Twist current_odom = odom_smoother_->getTwist();
     double current_linear_speed = std::hypot(current_odom.linear.x, current_odom.linear.y);
 
-    // Calculate estimated time taken to goal if speed is higher than 1cm/s
-    // and at least 10cm to go
+    // 如果当前速度大于1cm/s且剩余距离超过10cm，则计算预计剩余时间
     if ((std::abs(current_linear_speed) > 0.01) && (distance_remaining > 0.1)) {
       estimated_time_remaining =
         rclcpp::Duration::from_seconds(distance_remaining / std::abs(current_linear_speed));
     }
 
+    // 更新反馈信息中的相关字段
     feedback_msg->distance_remaining = distance_remaining;
     feedback_msg->estimated_time_remaining = estimated_time_remaining;
   } catch (...) {
-    // Ignore
+    // 忽略所有异常
   }
 
+  // 从黑板获取当前的恢复（recovery）次数
   int recovery_count = 0;
   blackboard->get<int>("number_recoveries", recovery_count);
   feedback_msg->number_of_recoveries = recovery_count;
   feedback_msg->current_pose = current_pose;
+  // 计算导航已用时间
   feedback_msg->navigation_time = clock_->now() - start_time_;
+  // 更新剩余目标位置的数量
   feedback_msg->number_of_poses_remaining = goal_poses.size();
 
   bt_action_server_->publishFeedback(feedback_msg);

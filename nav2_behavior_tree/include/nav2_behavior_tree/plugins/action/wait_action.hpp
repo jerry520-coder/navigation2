@@ -35,6 +35,13 @@ public:
    * @param action_name Action name this node creates a client for
    * @param conf BT node configuration
    */
+
+  /**
+ * @brief nav2_behavior_tree::WaitAction 的构造函数
+ * @param xml_tag_name 此节点的 XML 标签名
+ * @param action_name 此节点为之创建客户端的动作名称
+ * @param conf BT 节点配置
+ */
   WaitAction(
     const std::string & xml_tag_name,
     const std::string & action_name,
@@ -49,6 +56,11 @@ public:
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
+
+  /**
+ * @brief 创建 BT 端口列表
+ * @return BT::PortsList 包含基本端口及节点特定端口
+ */
   static BT::PortsList providedPorts()
   {
     return providedBasicPorts(

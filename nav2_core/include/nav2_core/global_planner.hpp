@@ -73,6 +73,13 @@ public:
    * @param goal  The goal pose of the robot
    * @return      The sequence of poses to get from start to goal, if any
    */
+
+  /**
+ * @brief 方法从起点和终点创建规划路径。
+ * @param start 机器人的起始姿态
+ * @param goal  机器人的目标姿态
+ * @return      从起点到终点的姿态序列（如果存在的话）
+ */
   virtual nav_msgs::msg::Path createPlan(
     const geometry_msgs::msg::PoseStamped & start,
     const geometry_msgs::msg::PoseStamped & goal) = 0;
